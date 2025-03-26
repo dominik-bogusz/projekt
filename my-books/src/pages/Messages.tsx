@@ -3,7 +3,6 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../api/supabase';
 import { Message } from '../types/notification';
 import { UserProfile } from '../types/profile';
-import { Card, Avatar, TextInput, Button, Spinner } from 'flowbite-react';
 import { HiPaperAirplane } from 'react-icons/hi';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -164,20 +163,29 @@ const MessagesPage: React.FC = () => {
 
 			<div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
 				<div className='md:col-span-1'>
-					<Card>
-						<div className='overflow-y-auto h-[600px]'>
-							<h2 className='text-xl font-bold mb-4'>Konwersacje</h2>
+					<div className='bg-white border border-gray-200 rounded-lg shadow h-[600px] overflow-hidden flex flex-col'>
+						<div className='overflow-y-auto h-full'>
+							<div className='p-4 border-b'>
+								<h2 className='text-xl font-bold'>Konwersacje</h2>
+							</div>
 
 							{isLoading && conversations.length === 0 ? (
 								<div className='flex justify-center py-8'>
-									<Spinner size='lg' />
+									<div
+										className='inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]'
+										role='status'
+									>
+										<span className='!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]'>
+											Ładowanie...
+										</span>
+									</div>
 								</div>
 							) : conversations.length === 0 ? (
 								<div className='text-center py-8 text-gray-500'>
 									Brak konwersacji
 								</div>
 							) : (
-								<div className='space-y-2'>
+								<div className='space-y-1'>
 									{conversations.map((profile) => (
 										<button
 											key={profile.id}
@@ -186,14 +194,16 @@ const MessagesPage: React.FC = () => {
 												selectedUser?.id === profile.id ? 'bg-blue-50' : ''
 											}`}
 										>
-											<Avatar
-												img={
-													profile.avatar_url || 'https://via.placeholder.com/40'
-												}
-												rounded
-												size='md'
-												className='mr-3'
-											/>
+											<div className='h-10 w-10 rounded-full overflow-hidden mr-3'>
+												<img
+													src={
+														profile.avatar_url ||
+														'https://via.placeholder.com/40'
+													}
+													alt={profile.display_name || 'User'}
+													className='h-full w-full object-cover'
+												/>
+											</div>
 											<div>
 												<div className='font-medium'>
 													{profile.display_name || 'Użytkownik'}
@@ -204,23 +214,24 @@ const MessagesPage: React.FC = () => {
 								</div>
 							)}
 						</div>
-					</Card>
+					</div>
 				</div>
 
 				<div className='md:col-span-2'>
-					<Card className='h-[600px] flex flex-col'>
+					<div className='bg-white border border-gray-200 rounded-lg shadow h-[600px] flex flex-col'>
 						{selectedUser ? (
 							<>
 								<div className='flex items-center p-3 border-b'>
-									<Avatar
-										img={
-											selectedUser.avatar_url ||
-											'https://via.placeholder.com/40'
-										}
-										rounded
-										size='md'
-										className='mr-3'
-									/>
+									<div className='h-10 w-10 rounded-full overflow-hidden mr-3'>
+										<img
+											src={
+												selectedUser.avatar_url ||
+												'https://via.placeholder.com/40'
+											}
+											alt={selectedUser.display_name || 'User'}
+											className='h-full w-full object-cover'
+										/>
+									</div>
 									<div className='font-medium'>
 										{selectedUser.display_name || 'Użytkownik'}
 									</div>
@@ -229,7 +240,14 @@ const MessagesPage: React.FC = () => {
 								<div className='flex-grow overflow-y-auto p-4'>
 									{isLoading ? (
 										<div className='flex justify-center items-center h-full'>
-											<Spinner size='lg' />
+											<div
+												className='inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]'
+												role='status'
+											>
+												<span className='!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]'>
+													Ładowanie...
+												</span>
+											</div>
 										</div>
 									) : messages.length === 0 ? (
 										<div className='text-center py-8 text-gray-500'>
@@ -282,17 +300,21 @@ const MessagesPage: React.FC = () => {
 									className='p-3 border-t mt-auto'
 								>
 									<div className='flex gap-2'>
-										<TextInput
+										<input
 											type='text'
 											value={newMessage}
 											onChange={(e) => setNewMessage(e.target.value)}
 											placeholder='Wpisz wiadomość...'
-											className='flex-grow'
+											className='flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
 										/>
-										<Button type='submit' disabled={!newMessage.trim()}>
+										<button
+											type='submit'
+											disabled={!newMessage.trim()}
+											className='inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 disabled:bg-blue-400'
+										>
 											<HiPaperAirplane className='mr-2' />
 											Wyślij
-										</Button>
+										</button>
 									</div>
 								</form>
 							</>
@@ -301,7 +323,7 @@ const MessagesPage: React.FC = () => {
 								Wybierz konwersację z listy po lewej stronie
 							</div>
 						)}
-					</Card>
+					</div>
 				</div>
 			</div>
 		</div>

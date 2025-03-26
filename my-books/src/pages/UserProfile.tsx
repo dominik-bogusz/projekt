@@ -4,14 +4,13 @@ import { supabase } from '../api/supabase';
 import { useAuth } from '../context/AuthContext';
 import { UserProfile, BookShelf } from '../types/profile';
 import { Book } from '../types/book';
-import { Tabs, Avatar, Button, Spinner, Card } from 'flowbite-react';
-import ProfileEditor from '../components/ProfileEditor';
-import BookList from '../components/BookList';
 import {
 	HiOutlineUsers,
 	HiOutlineBookOpen,
 	HiOutlinePencil,
 } from 'react-icons/hi';
+import ProfileEditor from '../components/ProfileEditor';
+import BookList from '../components/BookList';
 
 const UserProfilePage: React.FC = () => {
 	const { id } = useParams<{ id: string }>();
@@ -169,7 +168,14 @@ const UserProfilePage: React.FC = () => {
 	if (isLoading) {
 		return (
 			<div className='flex justify-center items-center h-64'>
-				<Spinner size='xl' />
+				<div
+					className='inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]'
+					role='status'
+				>
+					<span className='!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]'>
+						Ładowanie...
+					</span>
+				</div>
 			</div>
 		);
 	}
@@ -186,183 +192,230 @@ const UserProfilePage: React.FC = () => {
 
 	return (
 		<div className='max-w-6xl mx-auto px-4 py-8'>
-			<Card className='mb-8'>
-				<div className='flex flex-col md:flex-row'>
-					<div className='md:w-1/4 mb-6 md:mb-0 flex flex-col items-center'>
-						<Avatar
-							img={profile.avatar_url || 'https://via.placeholder.com/150'}
-							size='xl'
-							rounded
-							className='mb-4'
-						/>
-
-						<div className='text-center'>
-							<h2 className='text-2xl font-bold'>
-								{profile.display_name || 'Użytkownik'}
-							</h2>
-
-							{profile.location && (
-								<p className='text-gray-600 mt-1'>{profile.location}</p>
-							)}
-
-							{profile.website && (
-								<a
-									href={
-										profile.website.startsWith('http')
-											? profile.website
-											: `https://${profile.website}`
-									}
-									target='_blank'
-									rel='noopener noreferrer'
-									className='text-blue-600 hover:underline mt-1 block'
-								>
-									{profile.website}
-								</a>
-							)}
-						</div>
-
-						<div className='flex space-x-4 mt-4'>
-							<div className='text-center'>
-								<div className='text-xl font-bold'>{books.length}</div>
-								<div className='text-gray-500'>Książki</div>
+			<div className='bg-white rounded-lg shadow overflow-hidden mb-8'>
+				<div className='p-6'>
+					<div className='flex flex-col md:flex-row'>
+						<div className='md:w-1/4 mb-6 md:mb-0 flex flex-col items-center'>
+							<div className='h-32 w-32 rounded-full overflow-hidden mb-4'>
+								<img
+									src={profile.avatar_url || 'https://via.placeholder.com/150'}
+									alt={`${profile.display_name || 'User'} avatar`}
+									className='h-full w-full object-cover'
+								/>
 							</div>
 
 							<div className='text-center'>
-								<div className='text-xl font-bold'>{followersCount}</div>
-								<div className='text-gray-500'>Obserwujący</div>
-							</div>
+								<h2 className='text-2xl font-bold'>
+									{profile.display_name || 'Użytkownik'}
+								</h2>
 
-							<div className='text-center'>
-								<div className='text-xl font-bold'>{followingCount}</div>
-								<div className='text-gray-500'>Obserwuje</div>
-							</div>
-						</div>
-
-						{!isOwnProfile && user && (
-							<Button
-								color={isFollowing ? 'light' : 'blue'}
-								className='mt-4'
-								onClick={handleFollowToggle}
-							>
-								{isFollowing ? 'Obserwujesz' : 'Obserwuj'}
-							</Button>
-						)}
-
-						{isOwnProfile && !isEditing && (
-							<Button
-								color='light'
-								className='mt-4'
-								onClick={() => setIsEditing(true)}
-							>
-								<HiOutlinePencil className='mr-2' />
-								Edytuj profil
-							</Button>
-						)}
-					</div>
-
-					<div className='md:w-3/4 md:pl-8'>
-						{isEditing ? (
-							<ProfileEditor
-								profile={profile}
-								onProfileUpdated={handleProfileUpdate}
-							/>
-						) : (
-							<>
-								{profile.bio && (
-									<div className='mb-6'>
-										<h3 className='text-lg font-semibold mb-2'>O mnie</h3>
-										<p className='text-gray-700 whitespace-pre-line'>
-											{profile.bio}
-										</p>
-									</div>
+								{profile.location && (
+									<p className='text-gray-600 mt-1'>{profile.location}</p>
 								)}
 
-								{profile.favorite_genres &&
-									profile.favorite_genres.length > 0 && (
+								{profile.website && (
+									<a
+										href={
+											profile.website.startsWith('http')
+												? profile.website
+												: `https://${profile.website}`
+										}
+										target='_blank'
+										rel='noopener noreferrer'
+										className='text-blue-600 hover:underline mt-1 block'
+									>
+										{profile.website}
+									</a>
+								)}
+							</div>
+
+							<div className='flex space-x-4 mt-4'>
+								<div className='text-center'>
+									<div className='text-xl font-bold'>{books.length}</div>
+									<div className='text-gray-500'>Książki</div>
+								</div>
+
+								<div className='text-center'>
+									<div className='text-xl font-bold'>{followersCount}</div>
+									<div className='text-gray-500'>Obserwujący</div>
+								</div>
+
+								<div className='text-center'>
+									<div className='text-xl font-bold'>{followingCount}</div>
+									<div className='text-gray-500'>Obserwuje</div>
+								</div>
+							</div>
+
+							{!isOwnProfile && user && (
+								<button
+									className={`mt-4 px-4 py-2 rounded-lg ${
+										isFollowing
+											? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+											: 'bg-blue-600 text-white hover:bg-blue-700'
+									}`}
+									onClick={handleFollowToggle}
+								>
+									{isFollowing ? 'Obserwujesz' : 'Obserwuj'}
+								</button>
+							)}
+
+							{isOwnProfile && !isEditing && (
+								<button
+									className='mt-4 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50'
+									onClick={() => setIsEditing(true)}
+								>
+									<HiOutlinePencil className='mr-2' />
+									Edytuj profil
+								</button>
+							)}
+						</div>
+
+						<div className='md:w-3/4 md:pl-8'>
+							{isEditing ? (
+								<ProfileEditor
+									profile={profile}
+									onProfileUpdated={handleProfileUpdate}
+								/>
+							) : (
+								<>
+									{profile.bio && (
 										<div className='mb-6'>
-											<h3 className='text-lg font-semibold mb-2'>
-												Ulubione gatunki
-											</h3>
-											<div className='flex flex-wrap gap-2'>
-												{profile.favorite_genres.map((genre, index) => (
-													<span
-														key={index}
-														className='bg-blue-100 text-blue-800 text-sm px-2.5 py-0.5 rounded'
-													>
-														{genre}
-													</span>
-												))}
-											</div>
+											<h3 className='text-lg font-semibold mb-2'>O mnie</h3>
+											<p className='text-gray-700 whitespace-pre-line'>
+												{profile.bio}
+											</p>
 										</div>
 									)}
-							</>
-						)}
+
+									{profile.favorite_genres &&
+										profile.favorite_genres.length > 0 && (
+											<div className='mb-6'>
+												<h3 className='text-lg font-semibold mb-2'>
+													Ulubione gatunki
+												</h3>
+												<div className='flex flex-wrap gap-2'>
+													{profile.favorite_genres.map((genre, index) => (
+														<span
+															key={index}
+															className='bg-blue-100 text-blue-800 text-sm px-2.5 py-0.5 rounded'
+														>
+															{genre}
+														</span>
+													))}
+												</div>
+											</div>
+										)}
+								</>
+							)}
+						</div>
 					</div>
 				</div>
-			</Card>
+			</div>
 
 			{!isEditing && (
-				<Tabs style='underline' onActiveTabChange={(tab) => setActiveTab(tab)}>
-					<Tabs.Item
-						title='Biblioteka'
-						icon={HiOutlineBookOpen}
-						active={activeTab === 'books'}
-					>
-						{books.length === 0 ? (
-							<div className='text-center py-12 text-gray-500'>
-								Biblioteka jest pusta
-							</div>
-						) : (
-							<BookList books={books} />
-						)}
-					</Tabs.Item>
+				<div>
+					<div className='border-b border-gray-200 mb-6'>
+						<ul className='flex flex-wrap -mb-px text-sm font-medium text-center'>
+							<li className='mr-2'>
+								<button
+									onClick={() => setActiveTab('books')}
+									className={`inline-flex items-center p-4 rounded-t-lg border-b-2 ${
+										activeTab === 'books'
+											? 'text-blue-600 border-blue-600'
+											: 'border-transparent hover:text-gray-600 hover:border-gray-300'
+									}`}
+								>
+									<HiOutlineBookOpen className='w-5 h-5 mr-2' />
+									<span>Biblioteka</span>
+								</button>
+							</li>
+							<li className='mr-2'>
+								<button
+									onClick={() => setActiveTab('shelves')}
+									className={`inline-flex items-center p-4 rounded-t-lg border-b-2 ${
+										activeTab === 'shelves'
+											? 'text-blue-600 border-blue-600'
+											: 'border-transparent hover:text-gray-600 hover:border-gray-300'
+									}`}
+								>
+									<span>Półki</span>
+								</button>
+							</li>
+							<li className='mr-2'>
+								<button
+									onClick={() => setActiveTab('social')}
+									className={`inline-flex items-center p-4 rounded-t-lg border-b-2 ${
+										activeTab === 'social'
+											? 'text-blue-600 border-blue-600'
+											: 'border-transparent hover:text-gray-600 hover:border-gray-300'
+									}`}
+								>
+									<HiOutlineUsers className='w-5 h-5 mr-2' />
+									<span>Społeczność</span>
+								</button>
+							</li>
+						</ul>
+					</div>
 
-					<Tabs.Item title='Półki' active={activeTab === 'shelves'}>
-						{shelves.length === 0 ? (
-							<div className='text-center py-12 text-gray-500'>
-								Brak publicznych półek
-							</div>
-						) : (
-							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4'>
-								{shelves.map((shelf) => (
-									<Card key={shelf.id}>
-										<h5 className='text-xl font-bold tracking-tight text-gray-900'>
-											{shelf.name}
-										</h5>
-										{shelf.description && (
-											<p className='font-normal text-gray-700 mb-4'>
-												{shelf.description}
-											</p>
-										)}
-										<Link
-											to={`/shelves/${shelf.id}`}
-											className='inline-flex items-center text-blue-600 hover:underline'
+					{activeTab === 'books' && (
+						<>
+							{books.length === 0 ? (
+								<div className='text-center py-12 text-gray-500'>
+									Biblioteka jest pusta
+								</div>
+							) : (
+								<BookList books={books} />
+							)}
+						</>
+					)}
+
+					{activeTab === 'shelves' && (
+						<>
+							{shelves.length === 0 ? (
+								<div className='text-center py-12 text-gray-500'>
+									Brak publicznych półek
+								</div>
+							) : (
+								<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4'>
+									{shelves.map((shelf) => (
+										<div
+											key={shelf.id}
+											className='bg-white border border-gray-200 rounded-lg shadow p-6'
 										>
-											Zobacz książki
-											<svg
-												className='w-5 h-5 ml-1'
-												fill='currentColor'
-												viewBox='0 0 20 20'
-												xmlns='http://www.w3.org/2000/svg'
+											<h5 className='text-xl font-bold tracking-tight text-gray-900'>
+												{shelf.name}
+											</h5>
+											{shelf.description && (
+												<p className='font-normal text-gray-700 mb-4'>
+													{shelf.description}
+												</p>
+											)}
+											<Link
+												to={`/shelves/${shelf.id}`}
+												className='inline-flex items-center text-blue-600 hover:underline'
 											>
-												<path
-													fillRule='evenodd'
-													d='M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z'
-													clipRule='evenodd'
-												></path>
-											</svg>
-										</Link>
-									</Card>
-								))}
-							</div>
-						)}
-					</Tabs.Item>
+												Zobacz książki
+												<svg
+													className='w-5 h-5 ml-1'
+													fill='currentColor'
+													viewBox='0 0 20 20'
+													xmlns='http://www.w3.org/2000/svg'
+												>
+													<path
+														fillRule='evenodd'
+														d='M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z'
+														clipRule='evenodd'
+													></path>
+												</svg>
+											</Link>
+										</div>
+									))}
+								</div>
+							)}
+						</>
+					)}
 
-					<Tabs.Item
-						title='Społeczność'
-						icon={HiOutlineUsers}
-						active={activeTab === 'social'}
-					>
+					{activeTab === 'social' && (
 						<div className='grid grid-cols-1 md:grid-cols-2 gap-6 mt-4'>
 							<div>
 								<h3 className='text-xl font-bold mb-4'>
@@ -382,8 +435,8 @@ const UserProfilePage: React.FC = () => {
 								</div>
 							</div>
 						</div>
-					</Tabs.Item>
-				</Tabs>
+					)}
+				</div>
 			)}
 		</div>
 	);

@@ -2,15 +2,6 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../api/supabase';
 import { UserProfile } from '../types/profile';
-import {
-	Button,
-	TextInput,
-	Textarea,
-	Toggle,
-	FileInput,
-	Select,
-	Label,
-} from 'flowbite-react';
 
 interface ProfileEditorProps {
 	profile: Partial<UserProfile>;
@@ -195,64 +186,100 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
 					</div>
 
 					<div className='flex-1'>
-						<Label htmlFor='avatar' value='Zdjęcie profilowe' />
-						<FileInput
+						<label
+							htmlFor='avatar'
+							className='block text-sm font-medium text-gray-700'
+						>
+							Zdjęcie profilowe
+						</label>
+						<input
 							id='avatar'
+							type='file'
 							onChange={handleAvatarChange}
 							accept='image/png, image/jpeg, image/gif'
-							helperText='PNG, JPG lub GIF (max. 2MB)'
+							className='mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100'
 						/>
+						<p className='mt-1 text-sm text-gray-500'>
+							PNG, JPG lub GIF (max. 2MB)
+						</p>
 					</div>
 				</div>
 			</div>
 
 			<div>
-				<Label htmlFor='display_name' value='Nazwa wyświetlana' />
-				<TextInput
+				<label
+					htmlFor='display_name'
+					className='block text-sm font-medium text-gray-700 mb-1'
+				>
+					Nazwa wyświetlana
+				</label>
+				<input
 					id='display_name'
 					name='display_name'
+					type='text'
 					value={formData.display_name}
 					onChange={handleInputChange}
 					placeholder='Jak chcesz być widoczny/a dla innych'
+					className='shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border'
 				/>
 			</div>
 
 			<div>
-				<Label htmlFor='bio' value='O mnie' />
-				<Textarea
+				<label
+					htmlFor='bio'
+					className='block text-sm font-medium text-gray-700 mb-1'
+				>
+					O mnie
+				</label>
+				<textarea
 					id='bio'
 					name='bio'
 					value={formData.bio}
 					onChange={handleInputChange}
 					placeholder='Kilka słów o sobie i swoich czytelniczych zainteresowaniach'
 					rows={4}
+					className='shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border'
 				/>
 			</div>
 
 			<div>
-				<Label htmlFor='location' value='Lokalizacja' />
-				<TextInput
+				<label
+					htmlFor='location'
+					className='block text-sm font-medium text-gray-700 mb-1'
+				>
+					Lokalizacja
+				</label>
+				<input
 					id='location'
 					name='location'
+					type='text'
 					value={formData.location}
 					onChange={handleInputChange}
 					placeholder='Np. Warszawa, Kraków'
+					className='shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border'
 				/>
 			</div>
 
 			<div>
-				<Label htmlFor='website' value='Strona internetowa' />
-				<TextInput
+				<label
+					htmlFor='website'
+					className='block text-sm font-medium text-gray-700 mb-1'
+				>
+					Strona internetowa
+				</label>
+				<input
 					id='website'
 					name='website'
+					type='text'
 					value={formData.website}
 					onChange={handleInputChange}
 					placeholder='https://twoja-strona.pl'
+					className='shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border'
 				/>
 			</div>
 
 			<div>
-				<label className='block mb-2 text-sm font-medium text-gray-900 dark:text-white'>
+				<label className='block text-sm font-medium text-gray-700 mb-2'>
 					Ulubione gatunki
 				</label>
 
@@ -274,7 +301,11 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
 					))}
 				</div>
 
-				<Select onChange={handleGenreChange} value=''>
+				<select
+					onChange={handleGenreChange}
+					value=''
+					className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5'
+				>
 					<option value=''>Wybierz gatunek</option>
 					{BOOK_GENRES.filter((genre) => !selectedGenres.includes(genre)).map(
 						(genre) => (
@@ -283,25 +314,33 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
 							</option>
 						)
 					)}
-				</Select>
+				</select>
 			</div>
 
 			<div className='flex items-center gap-2'>
-				<Toggle
-					id='is_public'
-					checked={formData.is_public}
-					onChange={() =>
-						setFormData((prev) => ({ ...prev, is_public: !prev.is_public }))
-					}
-				/>
-				<Label htmlFor='is_public'>
-					Profil publiczny (widoczny dla innych użytkowników)
-				</Label>
+				<label className='inline-flex items-center cursor-pointer'>
+					<input
+						type='checkbox'
+						checked={formData.is_public}
+						onChange={() =>
+							setFormData((prev) => ({ ...prev, is_public: !prev.is_public }))
+						}
+						className='sr-only peer'
+					/>
+					<div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+					<span className='ms-3 text-sm font-medium text-gray-900'>
+						Profil publiczny (widoczny dla innych użytkowników)
+					</span>
+				</label>
 			</div>
 
-			<Button type='submit' disabled={isLoading}>
+			<button
+				type='submit'
+				disabled={isLoading}
+				className='w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300'
+			>
 				{isLoading ? 'Zapisywanie...' : 'Zapisz zmiany'}
-			</Button>
+			</button>
 		</form>
 	);
 };

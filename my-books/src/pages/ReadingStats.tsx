@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../api/supabase';
-import { Card, Spinner } from 'flowbite-react';
 
 const ReadingStats: React.FC = () => {
 	const [stats, setStats] = useState<any>({
@@ -108,7 +107,14 @@ const ReadingStats: React.FC = () => {
 	if (isLoading) {
 		return (
 			<div className='max-w-6xl mx-auto px-4 py-8 flex justify-center'>
-				<Spinner size='xl' />
+				<div
+					className='inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]'
+					role='status'
+				>
+					<span className='!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]'>
+						Ładowanie...
+					</span>
+				</div>
 			</div>
 		);
 	}
@@ -118,37 +124,37 @@ const ReadingStats: React.FC = () => {
 			<h1 className='text-3xl font-bold mb-6'>Statystyki czytania</h1>
 
 			<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
-				<Card className='text-center'>
+				<div className='bg-white border border-gray-200 rounded-lg shadow p-6 text-center'>
 					<h5 className='text-2xl font-bold tracking-tight text-gray-900'>
 						{stats.totalBooks}
 					</h5>
 					<p className='font-normal text-gray-700'>Wszystkich książek</p>
-				</Card>
+				</div>
 
-				<Card className='text-center'>
+				<div className='bg-white border border-gray-200 rounded-lg shadow p-6 text-center'>
 					<h5 className='text-2xl font-bold tracking-tight text-gray-900'>
 						{stats.booksRead}
 					</h5>
 					<p className='font-normal text-gray-700'>Przeczytanych</p>
-				</Card>
+				</div>
 
-				<Card className='text-center'>
+				<div className='bg-white border border-gray-200 rounded-lg shadow p-6 text-center'>
 					<h5 className='text-2xl font-bold tracking-tight text-gray-900'>
 						{stats.currentlyReading}
 					</h5>
 					<p className='font-normal text-gray-700'>W trakcie czytania</p>
-				</Card>
+				</div>
 
-				<Card className='text-center'>
+				<div className='bg-white border border-gray-200 rounded-lg shadow p-6 text-center'>
 					<h5 className='text-2xl font-bold tracking-tight text-gray-900'>
 						{stats.wantToRead}
 					</h5>
 					<p className='font-normal text-gray-700'>Do przeczytania</p>
-				</Card>
+				</div>
 			</div>
 
 			<div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-				<Card>
+				<div className='bg-white border border-gray-200 rounded-lg shadow p-6'>
 					<h5 className='text-xl font-bold mb-4'>Strony przeczytane</h5>
 					<div className='flex items-center justify-center'>
 						<div className='text-center'>
@@ -158,9 +164,9 @@ const ReadingStats: React.FC = () => {
 							<div className='text-gray-500 mt-2'>stron</div>
 						</div>
 					</div>
-				</Card>
+				</div>
 
-				<Card>
+				<div className='bg-white border border-gray-200 rounded-lg shadow p-6'>
 					<h5 className='text-xl font-bold mb-4'>Ulubione gatunki</h5>
 					{Object.keys(stats.genreDistribution).length === 0 ? (
 						<p className='text-center text-gray-500'>Brak danych o gatunkach</p>
@@ -190,7 +196,7 @@ const ReadingStats: React.FC = () => {
 								))}
 						</div>
 					)}
-				</Card>
+				</div>
 			</div>
 		</div>
 	);

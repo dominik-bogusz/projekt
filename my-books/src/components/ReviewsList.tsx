@@ -1,7 +1,6 @@
 import React from 'react';
 import { Review, UserProfile } from '../types/review';
 import RatingStars from './RatingStars';
-import { Card, Avatar } from 'flowbite-react';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
@@ -27,15 +26,21 @@ const ReviewsList: React.FC<ReviewsListProps> = ({
 	return (
 		<div className='space-y-6'>
 			{reviews.map((review) => (
-				<Card key={review.id}>
+				<div
+					key={review.id}
+					className='bg-white border border-gray-200 rounded-lg shadow p-4'
+				>
 					<div className='flex justify-between items-start'>
 						<div className='flex items-start'>
-							<Avatar
-								img={review.user.avatar_url || 'https://via.placeholder.com/40'}
-								rounded
-								size='md'
-								className='mr-3'
-							/>
+							<div className='h-10 w-10 rounded-full overflow-hidden mr-3'>
+								<img
+									src={
+										review.user.avatar_url || 'https://via.placeholder.com/40'
+									}
+									alt={review.user.display_name || 'User'}
+									className='h-full w-full object-cover'
+								/>
+							</div>
 							<div>
 								<div className='font-medium'>
 									{review.user.display_name || review.user.email}
@@ -71,7 +76,7 @@ const ReviewsList: React.FC<ReviewsListProps> = ({
 							{review.content}
 						</p>
 					</div>
-				</Card>
+				</div>
 			))}
 		</div>
 	);

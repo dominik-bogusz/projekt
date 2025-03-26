@@ -3,7 +3,6 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../api/supabase';
 import { ExchangeRequest } from '../types/exchange';
 import { Book } from '../types/book';
-import { Button, Card, Tabs, Badge } from 'flowbite-react';
 
 const ExchangeRequests: React.FC = () => {
 	const [incomingRequests, setIncomingRequests] = useState<
@@ -13,6 +12,7 @@ const ExchangeRequests: React.FC = () => {
 		(ExchangeRequest & { book: Book; owner: { email: string } })[]
 	>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const [activeTab, setActiveTab] = useState('incoming');
 	const { user } = useAuth();
 
 	const fetchRequests = async () => {
@@ -139,25 +139,27 @@ const ExchangeRequests: React.FC = () => {
 	};
 
 	const renderStatusBadge = (status: string) => {
-		let color = 'gray';
+		let colorClass = 'bg-gray-100 text-gray-800';
 
 		switch (status) {
 			case 'pending':
-				color = 'warning';
+				colorClass = 'bg-yellow-100 text-yellow-800';
 				break;
 			case 'accepted':
-				color = 'success';
+				colorClass = 'bg-green-100 text-green-800';
 				break;
 			case 'rejected':
-				color = 'failure';
+				colorClass = 'bg-red-100 text-red-800';
 				break;
 			case 'completed':
-				color = 'info';
+				colorClass = 'bg-blue-100 text-blue-800';
 				break;
 		}
 
 		return (
-			<Badge color={color as any}>
+			<span
+				className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${colorClass}`}
+			>
 				{status === 'pending'
 					? 'Oczekująca'
 					: status === 'accepted'
@@ -165,7 +167,7 @@ const ExchangeRequests: React.FC = () => {
 					: status === 'rejected'
 					? 'Odrzucona'
 					: 'Ukończona'}
-			</Badge>
+			</span>
 		);
 	};
 
@@ -183,8 +185,37 @@ const ExchangeRequests: React.FC = () => {
 		<div className='max-w-6xl mx-auto px-4 py-8'>
 			<h1 className='text-3xl font-bold mb-6'>Wymiana książek</h1>
 
-			<Tabs>
-				<Tabs.Item title='Przychodzące prośby' active>
+			<div className='border-b border-gray-200 mb-6'>
+				<ul className='flex flex-wrap -mb-px text-sm font-medium text-center'>
+					<li className='mr-2'>
+						<button
+							onClick={() => setActiveTab('incoming')}
+							className={`inline-block p-4 rounded-t-lg ${
+								activeTab === 'incoming'
+									? 'border-b-2 border-blue-600 text-blue-600'
+									: 'hover:text-gray-600 hover:border-gray-300'
+							}`}
+						>
+							Przychodzące prośby
+						</button>
+					</li>
+					<li className='mr-2'>
+						<button
+							onClick={() => setActiveTab('outgoing')}
+							className={`inline-block p-4 rounded-t-lg ${
+								activeTab === 'outgoing'
+									? 'border-b-2 border-blue-600 text-blue-600'
+									: 'hover:text-gray-600 hover:border-gray-300'
+							}`}
+						>
+							Wysłane prośby
+						</button>
+					</li>
+				</ul>
+			</div>
+
+			{activeTab === 'incoming' ? (
+				<>
 					{incomingRequests.length === 0 ? (
 						<div className='p-4 text-center text-gray-500'>
 							Nie masz żadnych przychodzących próśb o wymianę.
@@ -192,7 +223,10 @@ const ExchangeRequests: React.FC = () => {
 					) : (
 						<div className='grid gap-4 mt-4'>
 							{incomingRequests.map((request) => (
-								<Card key={request.id}>
+								<div
+									key={request.id}
+									className='bg-white border border-gray-200 rounded-lg shadow p-4'
+								>
 									<div className='flex flex-col md:flex-row'>
 										<div className='flex mb-4 md:mb-0 md:mr-6'>
 											<img
@@ -242,35 +276,33 @@ const ExchangeRequests: React.FC = () => {
 
 											{request.status === 'pending' && (
 												<div className='mt-4 flex gap-2'>
-													<Button
-														color='success'
-														size='sm'
+													<button
 														onClick={() =>
 															handleRequestAction(request.id, 'accept')
 														}
+														className='px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-green-300'
 													>
 														Akceptuj
-													</Button>
-													<Button
-														color='failure'
-														size='sm'
+													</button>
+													<button
 														onClick={() =>
 															handleRequestAction(request.id, 'reject')
 														}
+														className='px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300'
 													>
 														Odrzuć
-													</Button>
+													</button>
 												</div>
 											)}
 										</div>
 									</div>
-								</Card>
+								</div>
 							))}
 						</div>
 					)}
-				</Tabs.Item>
-
-				<Tabs.Item title='Wysłane prośby'>
+				</>
+			) : (
+				<>
 					{outgoingRequests.length === 0 ? (
 						<div className='p-4 text-center text-gray-500'>
 							Nie wysłałeś żadnych próśb o wymianę.
@@ -278,7 +310,10 @@ const ExchangeRequests: React.FC = () => {
 					) : (
 						<div className='grid gap-4 mt-4'>
 							{outgoingRequests.map((request) => (
-								<Card key={request.id}>
+								<div
+									key={request.id}
+									className='bg-white border border-gray-200 rounded-lg shadow p-4'
+								>
 									<div className='flex flex-col md:flex-row'>
 										<div className='flex mb-4 md:mb-0 md:mr-6'>
 											<img
@@ -328,15 +363,14 @@ const ExchangeRequests: React.FC = () => {
 
 											{request.status === 'pending' && (
 												<div className='mt-4'>
-													<Button
-														color='gray'
-														size='sm'
+													<button
 														onClick={() =>
 															handleRequestAction(request.id, 'cancel')
 														}
+														className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-100'
 													>
 														Anuluj prośbę
-													</Button>
+													</button>
 												</div>
 											)}
 
@@ -350,12 +384,12 @@ const ExchangeRequests: React.FC = () => {
 											)}
 										</div>
 									</div>
-								</Card>
+								</div>
 							))}
 						</div>
 					)}
-				</Tabs.Item>
-			</Tabs>
+				</>
+			)}
 		</div>
 	);
 };
