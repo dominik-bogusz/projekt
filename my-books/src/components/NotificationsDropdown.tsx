@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useNotifications } from '../context/NotificationContext';
 import { HiBell, HiOutlineCheck } from 'react-icons/hi';
 import { formatDistanceToNow } from 'date-fns';
@@ -10,6 +10,7 @@ const NotificationsDropdown: React.FC = () => {
 		useNotifications();
 	const [isOpen, setIsOpen] = useState(false);
 	const dropdownRef = useRef<HTMLDivElement>(null);
+	const navigate = useNavigate();
 
 	useEffect(() => {
 		function handleClickOutside(event: MouseEvent) {
@@ -36,12 +37,20 @@ const NotificationsDropdown: React.FC = () => {
 				return `/users/${notification.related_id}`;
 			case 'review_like':
 			case 'review_comment':
-				return `/books/${notification.related_id}/reviews`;
+				return `/book/${notification.related_id}/reviews`;
 			case 'message':
 				return '/messages';
 			default:
 				return '#';
 		}
+	};
+
+	const handleNotificationClick = (notificationId: string, path: string) => {
+		if (!notifications.find((n) => n.id === notificationId)?.is_read) {
+			markAsRead(notificationId);
+		}
+		setIsOpen(false);
+		navigate(path);
 	};
 
 	return (
@@ -79,13 +88,15 @@ const NotificationsDropdown: React.FC = () => {
 							</div>
 						) : (
 							notifications.map((notification) => (
-								<Link
+								<div
 									key={notification.id}
-									to={getNotificationLink(notification)}
 									onClick={() =>
-										!notification.is_read && markAsRead(notification.id)
+										handleNotificationClick(
+											notification.id,
+											getNotificationLink(notification)
+										)
 									}
-									className={`flex px-4 py-3 hover:bg-gray-100 ${
+									className={`flex px-4 py-3 hover:bg-gray-100 cursor-pointer ${
 										!notification.is_read ? 'bg-blue-50' : ''
 									}`}
 								>
@@ -103,7 +114,7 @@ const NotificationsDropdown: React.FC = () => {
 											Nowe
 										</span>
 									)}
-								</Link>
+								</div>
 							))
 						)}
 					</div>
