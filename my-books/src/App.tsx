@@ -11,9 +11,10 @@ import UserProfile from './pages/UserProfile';
 import CommunityPage from './pages/CommunityPage';
 import ExchangeRequests from './pages/ExchangeRequests';
 import Messages from './pages/Messages';
-import AllNotifications from './pages/AllNotifications.tsx';
+import AllNotifications from './pages/AllNotifications';
 import ReadingStats from './pages/ReadingStats';
 import BookShelves from './pages/BookShelves';
+import AboutProject from './pages/AboutProject';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { AuthProvider } from './context/AuthContext';
@@ -49,6 +50,7 @@ function App() {
 									<Route path='/statistics' element={<ReadingStats />} />
 									<Route path='/shelves' element={<BookShelves />} />
 									<Route path='/shelves/:id' element={<BookShelves />} />
+									<Route path='/about' element={<AboutProject />} />
 									<Route path='*' element={<Navigate to='/' replace />} />
 								</Routes>
 							</main>
