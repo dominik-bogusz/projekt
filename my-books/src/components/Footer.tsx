@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Footer as FlowbiteFooter } from 'flowbite-react';
 import {
 	HiOutlineHome,
 	HiOutlineBookOpen,
@@ -12,80 +11,132 @@ import { BsFacebook, BsInstagram, BsTwitter } from 'react-icons/bs';
 
 const Footer: React.FC = () => {
 	return (
-		<FlowbiteFooter container className='rounded-none shadow-none'>
-			<div className='w-full'>
-				<div className='grid w-full justify-between sm:flex sm:justify-between md:flex md:grid-cols-1'>
-					<div className='mb-6 sm:mb-0'>
-						<FlowbiteFooter.Brand
-							href='/'
-							src='/book-logo.svg'
-							alt='My Books Logo'
-							name='My Books'
-						/>
+		<footer className='bg-white'>
+			<div className='mx-auto w-full max-w-screen-xl p-4 py-6 lg:py-8'>
+				<div className='md:flex md:justify-between'>
+					<div className='mb-6 md:mb-0'>
+						<Link to='/' className='flex items-center'>
+							<img
+								src='/book-logo.svg'
+								className='h-8 mr-3'
+								alt='My Books Logo'
+							/>
+							<span className='self-center text-2xl font-semibold whitespace-nowrap'>
+								My Books
+							</span>
+						</Link>
 						<p className='mt-4 max-w-xs text-gray-500'>
 							Twoja osobista biblioteka. Zarządzaj, dziel się i odkrywaj nowe
 							książki razem z innymi czytelnikami.
 						</p>
 					</div>
-					<div className='grid grid-cols-2 gap-8 sm:mt-4 sm:grid-cols-3 sm:gap-6'>
+					<div className='grid grid-cols-2 gap-8 sm:gap-6 sm:grid-cols-3'>
 						<div>
-							<FlowbiteFooter.Title title='Nawigacja' />
-							<FlowbiteFooter.LinkGroup col>
-								<FlowbiteFooter.Link href='/' icon={HiOutlineHome}>
-									Strona główna
-								</FlowbiteFooter.Link>
-								<FlowbiteFooter.Link href='/search' icon={HiOutlineSearch}>
-									Wyszukaj
-								</FlowbiteFooter.Link>
-								<FlowbiteFooter.Link href='/my-books' icon={HiOutlineBookOpen}>
-									Moje książki
-								</FlowbiteFooter.Link>
-							</FlowbiteFooter.LinkGroup>
+							<h2 className='mb-6 text-sm font-semibold text-gray-900 uppercase'>
+								Nawigacja
+							</h2>
+							<ul className='text-gray-600'>
+								<li className='mb-4'>
+									<Link to='/' className='flex items-center hover:underline'>
+										<HiOutlineHome className='mr-2' />
+										<span>Strona główna</span>
+									</Link>
+								</li>
+								<li className='mb-4'>
+									<Link
+										to='/search'
+										className='flex items-center hover:underline'
+									>
+										<HiOutlineSearch className='mr-2' />
+										<span>Wyszukaj</span>
+									</Link>
+								</li>
+								<li>
+									<Link
+										to='/my-books'
+										className='flex items-center hover:underline'
+									>
+										<HiOutlineBookOpen className='mr-2' />
+										<span>Moje książki</span>
+									</Link>
+								</li>
+							</ul>
 						</div>
 						<div>
-							<FlowbiteFooter.Title title='Społeczność' />
-							<FlowbiteFooter.LinkGroup col>
-								<FlowbiteFooter.Link
-									href='/community'
-									icon={HiOutlineUserGroup}
-								>
-									Czytelnicy
-								</FlowbiteFooter.Link>
-								<FlowbiteFooter.Link
-									href='/exchanges'
-									icon={HiOutlineSwitchHorizontal}
-								>
-									Wymiana książek
-								</FlowbiteFooter.Link>
-							</FlowbiteFooter.LinkGroup>
+							<h2 className='mb-6 text-sm font-semibold text-gray-900 uppercase'>
+								Społeczność
+							</h2>
+							<ul className='text-gray-600'>
+								<li className='mb-4'>
+									<Link
+										to='/community'
+										className='flex items-center hover:underline'
+									>
+										<HiOutlineUserGroup className='mr-2' />
+										<span>Czytelnicy</span>
+									</Link>
+								</li>
+								<li>
+									<Link
+										to='/exchanges'
+										className='flex items-center hover:underline'
+									>
+										<HiOutlineSwitchHorizontal className='mr-2' />
+										<span>Wymiana książek</span>
+									</Link>
+								</li>
+							</ul>
 						</div>
 						<div>
-							<FlowbiteFooter.Title title='O nas' />
-							<FlowbiteFooter.LinkGroup col>
-								<FlowbiteFooter.Link href='#'>O projekcie</FlowbiteFooter.Link>
-								<FlowbiteFooter.Link href='#'>Regulamin</FlowbiteFooter.Link>
-								<FlowbiteFooter.Link href='#'>
-									Polityka prywatności
-								</FlowbiteFooter.Link>
-							</FlowbiteFooter.LinkGroup>
+							<h2 className='mb-6 text-sm font-semibold text-gray-900 uppercase'>
+								O nas
+							</h2>
+							<ul className='text-gray-600'>
+								<li className='mb-4'>
+									<Link to='#' className='hover:underline'>
+										O projekcie
+									</Link>
+								</li>
+								<li className='mb-4'>
+									<Link to='#' className='hover:underline'>
+										Regulamin
+									</Link>
+								</li>
+								<li>
+									<Link to='#' className='hover:underline'>
+										Polityka prywatności
+									</Link>
+								</li>
+							</ul>
 						</div>
 					</div>
 				</div>
-				<FlowbiteFooter.Divider />
-				<div className='w-full sm:flex sm:items-center sm:justify-between'>
-					<FlowbiteFooter.Copyright
-						by='My Books™'
-						href='#'
-						year={new Date().getFullYear()}
-					/>
-					<div className='mt-4 flex space-x-6 sm:mt-0 sm:justify-center'>
-						<FlowbiteFooter.Icon href='#' icon={BsFacebook} />
-						<FlowbiteFooter.Icon href='#' icon={BsInstagram} />
-						<FlowbiteFooter.Icon href='#' icon={BsTwitter} />
+				<hr className='my-6 border-gray-200 sm:mx-auto lg:my-8' />
+				<div className='sm:flex sm:items-center sm:justify-between'>
+					<span className='text-sm text-gray-500 sm:text-center'>
+						© {new Date().getFullYear()}{' '}
+						<a href='#' className='hover:underline'>
+							My Books™
+						</a>
+						. Wszelkie prawa zastrzeżone.
+					</span>
+					<div className='flex mt-4 space-x-6 sm:justify-center sm:mt-0'>
+						<a href='#' className='text-gray-500 hover:text-gray-900'>
+							<BsFacebook className='w-5 h-5' />
+							<span className='sr-only'>Facebook</span>
+						</a>
+						<a href='#' className='text-gray-500 hover:text-gray-900'>
+							<BsInstagram className='w-5 h-5' />
+							<span className='sr-only'>Instagram</span>
+						</a>
+						<a href='#' className='text-gray-500 hover:text-gray-900'>
+							<BsTwitter className='w-5 h-5' />
+							<span className='sr-only'>Twitter</span>
+						</a>
 					</div>
 				</div>
 			</div>
-		</FlowbiteFooter>
+		</footer>
 	);
 };
 

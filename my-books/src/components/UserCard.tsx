@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { UserProfile } from '../types/profile';
-import { Card, Avatar, Button } from 'flowbite-react';
 import { supabase } from '../api/supabase';
 import { useAuth } from '../context/AuthContext';
 
@@ -52,57 +51,64 @@ const UserCard: React.FC<UserCardProps> = ({
 	};
 
 	return (
-		<Card className='overflow-hidden'>
-			<div className='flex items-center space-x-4'>
-				<Avatar
-					img={user.avatar_url || 'https://via.placeholder.com/100?text=Avatar'}
-					size='lg'
-					rounded
-				/>
-				<div className='flex-1'>
-					<Link
-						to={`/users/${user.id}`}
-						className='text-lg font-medium hover:text-blue-600'
-					>
-						{user.display_name || 'Użytkownik'}
-					</Link>
-					{user.location && (
-						<p className='text-sm text-gray-500'>{user.location}</p>
+		<div className='bg-white rounded-lg shadow overflow-hidden'>
+			<div className='p-5'>
+				<div className='flex items-center space-x-4'>
+					<img
+						src={
+							user.avatar_url || 'https://via.placeholder.com/100?text=Avatar'
+						}
+						alt={`${user.display_name || 'User'} profile`}
+						className='w-16 h-16 rounded-full object-cover'
+					/>
+					<div className='flex-1'>
+						<Link
+							to={`/users/${user.id}`}
+							className='text-lg font-medium hover:text-blue-600'
+						>
+							{user.display_name || 'Użytkownik'}
+						</Link>
+						{user.location && (
+							<p className='text-sm text-gray-500'>{user.location}</p>
+						)}
+					</div>
+
+					{currentUser && currentUser.id !== user.id && (
+						<button
+							className={`px-4 py-2 text-sm font-medium rounded-lg ${
+								isFollowing
+									? 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+									: 'bg-blue-600 text-white hover:bg-blue-700'
+							}`}
+							onClick={handleFollowToggle}
+						>
+							{isFollowing ? 'Obserwujesz' : 'Obserwuj'}
+						</button>
 					)}
 				</div>
 
-				{currentUser && currentUser.id !== user.id && (
-					<Button
-						size='sm'
-						color={isFollowing ? 'light' : 'blue'}
-						onClick={handleFollowToggle}
-					>
-						{isFollowing ? 'Obserwujesz' : 'Obserwuj'}
-					</Button>
+				{user.bio && (
+					<div className='mt-3'>
+						<p className='text-sm text-gray-700 line-clamp-2'>{user.bio}</p>
+					</div>
+				)}
+
+				{user.favorite_genres && user.favorite_genres.length > 0 && (
+					<div className='mt-3'>
+						<div className='flex flex-wrap gap-1'>
+							{user.favorite_genres.map((genre, index) => (
+								<span
+									key={index}
+									className='bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded'
+								>
+									{genre}
+								</span>
+							))}
+						</div>
+					</div>
 				)}
 			</div>
-
-			{user.bio && (
-				<div className='mt-3'>
-					<p className='text-sm text-gray-700 line-clamp-2'>{user.bio}</p>
-				</div>
-			)}
-
-			{user.favorite_genres && user.favorite_genres.length > 0 && (
-				<div className='mt-3'>
-					<div className='flex flex-wrap gap-1'>
-						{user.favorite_genres.map((genre, index) => (
-							<span
-								key={index}
-								className='bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded'
-							>
-								{genre}
-							</span>
-						))}
-					</div>
-				</div>
-			)}
-		</Card>
+		</div>
 	);
 };
 

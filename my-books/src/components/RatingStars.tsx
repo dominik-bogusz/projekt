@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Rating } from 'flowbite-react';
 import { HiStar } from 'react-icons/hi';
 
 interface RatingStarsProps {

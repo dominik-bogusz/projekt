@@ -7,7 +7,7 @@ import { Review } from '../types/review';
 import ReviewForm from '../components/ReviewForm';
 import ReviewsList from '../components/ReviewsList';
 import RatingStars from '../components/RatingStars';
-import { Tabs, Spinner } from 'flowbite-react';
+import Tabs from '../components/Tabs';
 import { getBookById } from '../api/googleBooks';
 
 const BookReviews: React.FC = () => {
@@ -117,7 +117,7 @@ const BookReviews: React.FC = () => {
 	if (isLoading) {
 		return (
 			<div className='max-w-6xl mx-auto px-4 py-8 flex justify-center'>
-				<Spinner size='xl' />
+				<div className='animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent'></div>
 			</div>
 		);
 	}
