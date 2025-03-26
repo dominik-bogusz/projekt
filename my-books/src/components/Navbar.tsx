@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import LoginModal from './LoginModal';
 import NotificationsDropdown from './NotificationsDropdown';
 import {
-	HiOutlineHome,
 	HiOutlineSearch,
 	HiOutlineBookOpen,
 	HiOutlinePlusCircle,
@@ -189,21 +188,6 @@ const Navbar = () => {
 						} w-full md:block md:w-auto md:order-1`}
 					>
 						<ul className='flex flex-col p-4 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 md:mt-0 md:border-0 md:bg-white'>
-							<li>
-								<Link
-									to='/'
-									className={`block py-2 pl-3 pr-4 rounded md:p-0 ${
-										isActive('/')
-											? 'text-blue-600'
-											: 'text-gray-700 hover:text-blue-600'
-									}`}
-								>
-									<div className='flex items-center'>
-										<HiOutlineHome className='mr-1' />
-										<span>Strona główna</span>
-									</div>
-								</Link>
-							</li>
 							<li>
 								<Link
 									to='/search'
