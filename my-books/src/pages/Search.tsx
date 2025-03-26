@@ -4,8 +4,6 @@ import { searchBooks } from '../api/googleBooks';
 import { supabase } from '../api/supabase';
 import BookList from '../components/BookList';
 import { Book, GoogleBookResponse } from '../types/book';
-import { TextInput, Button, Select, Spinner, Alert } from 'flowbite-react';
-import { HiSearch, HiExclamation } from 'react-icons/hi';
 
 const Search: React.FC = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -18,22 +16,23 @@ const Search: React.FC = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [language, setLanguage] = useState(initialLanguage);
 
-	// Wykonaj wyszukiwanie automatycznie, jeśli query jest w URL
 	useEffect(() => {
 		if (initialQuery) {
-			handleSearch(new Event('submit') as React.FormEvent<HTMLFormElement>);
+			handleSearchWithoutEvent();
 		}
 	}, []);
 
 	const handleSearch = async (e: React.FormEvent) => {
 		e.preventDefault();
+		handleSearchWithoutEvent();
+	};
 
+	const handleSearchWithoutEvent = async () => {
 		if (!query.trim()) return;
 
 		setIsLoading(true);
 		setError(null);
 
-		// Aktualizuj parametry URL
 		setSearchParams({ q: query, lang: language });
 
 		try {
@@ -50,7 +49,6 @@ const Search: React.FC = () => {
 				return;
 			}
 
-			// Przekształcenie danych z Google Books API do naszego formatu
 			const formattedBooks: Book[] = response.items.map((item) => ({
 				id: item.id,
 				title: item.volumeInfo.title,
@@ -65,7 +63,6 @@ const Search: React.FC = () => {
 				publisher: item.volumeInfo.publisher,
 			}));
 
-			// Sortowanie - książki z okładkami na początku
 			const sortedBooks = formattedBooks.sort((a, b) => {
 				if (a.imageLinks?.thumbnail && !b.imageLinks?.thumbnail) return -1;
 				if (!a.imageLinks?.thumbnail && b.imageLinks?.thumbnail) return 1;
@@ -83,7 +80,6 @@ const Search: React.FC = () => {
 
 	const saveBookToLibrary = async (book: Book) => {
 		try {
-			// Sprawdzamy, czy użytkownik jest zalogowany
 			const {
 				data: { session },
 			} = await supabase.auth.getSession();
@@ -93,7 +89,6 @@ const Search: React.FC = () => {
 				return;
 			}
 
-			// Dodajemy książkę do bazy danych
 			const { error } = await supabase.from('books').insert([
 				{
 					google_books_id: book.id,
@@ -122,51 +117,74 @@ const Search: React.FC = () => {
 
 			<form onSubmit={handleSearch} className='mb-8'>
 				<div className='flex flex-col md:flex-row gap-2'>
-					<div className='flex-grow'>
-						<TextInput
+					<div className='flex-grow relative'>
+						<div className='absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none'>
+							<svg
+								className='w-4 h-4 text-gray-500'
+								aria-hidden='true'
+								xmlns='http://www.w3.org/2000/svg'
+								fill='none'
+								viewBox='0 0 20 20'
+							>
+								<path
+									stroke='currentColor'
+									strokeLinecap='round'
+									strokeLinejoin='round'
+									strokeWidth='2'
+									d='m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z'
+								/>
+							</svg>
+						</div>
+						<input
 							type='text'
+							className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5'
+							placeholder='Tytuł, autor, ISBN...'
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
-							placeholder='Tytuł, autor, ISBN...'
-							icon={HiSearch}
 							required
 						/>
 					</div>
 
 					<div className='w-full md:w-36'>
-						<Select
+						<select
 							value={language}
 							onChange={(e) => setLanguage(e.target.value)}
+							className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5'
 						>
 							<option value='pl'>Polski</option>
 							<option value='en'>Angielski</option>
 							<option value='de'>Niemiecki</option>
 							<option value='fr'>Francuski</option>
 							<option value=''>Wszystkie</option>
-						</Select>
+						</select>
 					</div>
 
 					<div>
-						<Button type='submit' disabled={isLoading}>
+						<button
+							type='submit'
+							disabled={isLoading}
+							className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center'
+						>
 							{isLoading ? (
 								<>
-									<div className='mr-2'>
-										<Spinner size='sm' />
-									</div>
+									<div className='inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite] mr-2'></div>
 									Szukam...
 								</>
 							) : (
 								'Szukaj'
 							)}
-						</Button>
+						</button>
 					</div>
 				</div>
 			</form>
 
 			{error && (
-				<Alert color='failure' icon={HiExclamation} className='mb-6'>
-					{error}
-				</Alert>
+				<div
+					className='p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50'
+					role='alert'
+				>
+					<span className='font-medium'>Błąd!</span> {error}
+				</div>
 			)}
 
 			<BookList

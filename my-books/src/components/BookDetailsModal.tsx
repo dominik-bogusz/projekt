@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Book } from '../types/book';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../api/supabase';
-import LoginModal from './LoginModal';
-import { Modal, Button, Badge, Rating } from 'flowbite-react';
 
 interface BookDetailsModalProps {
 	book: Book;
@@ -14,13 +12,12 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 	book,
 	onClose,
 }) => {
-	const [showLoginModal, setShowLoginModal] = useState(false);
 	const { user } = useAuth();
 	const defaultCover = 'https://via.placeholder.com/128x192?text=Brak+Okładki';
 
 	const saveBookToLibrary = async () => {
 		if (!user) {
-			setShowLoginModal(true);
+			window.location.href = '/login';
 			return;
 		}
 
@@ -48,10 +45,30 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 	};
 
 	return (
-		<>
-			<Modal show={true} onClose={onClose} size='4xl'>
-				<Modal.Header>{book.title}</Modal.Header>
-				<Modal.Body>
+		<div className='fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4'>
+			<div className='relative bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto'>
+				<div className='flex justify-between items-center p-4 border-b'>
+					<h3 className='text-xl font-semibold text-gray-900'>{book.title}</h3>
+					<button
+						onClick={onClose}
+						className='text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5'
+					>
+						<svg
+							className='w-5 h-5'
+							fill='currentColor'
+							viewBox='0 0 20 20'
+							xmlns='http://www.w3.org/2000/svg'
+						>
+							<path
+								fillRule='evenodd'
+								d='M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z'
+								clipRule='evenodd'
+							></path>
+						</svg>
+					</button>
+				</div>
+
+				<div className='p-6'>
 					<div className='md:flex'>
 						<div className='md:w-1/3 mb-6 md:mb-0 flex flex-col items-center'>
 							<img
@@ -63,7 +80,10 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 								}}
 							/>
 
-							<Button color='blue' className='mt-4' onClick={saveBookToLibrary}>
+							<button
+								onClick={saveBookToLibrary}
+								className='mt-4 inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300'
+							>
 								<svg
 									className='w-5 h-5 mr-2'
 									fill='currentColor'
@@ -77,7 +97,7 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 									/>
 								</svg>
 								Dodaj do biblioteki
-							</Button>
+							</button>
 						</div>
 
 						<div className='md:w-2/3 md:pl-8'>
@@ -123,17 +143,26 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 							{book.averageRating && (
 								<div className='mb-4'>
 									<span className='font-medium'>Ocena:</span>
-									<div className='mt-1'>
-										<Rating>
-											<Rating.Star filled={book.averageRating >= 1} />
-											<Rating.Star filled={book.averageRating >= 2} />
-											<Rating.Star filled={book.averageRating >= 3} />
-											<Rating.Star filled={book.averageRating >= 4} />
-											<Rating.Star filled={book.averageRating >= 5} />
-											<p className='ml-2 text-sm font-medium text-gray-500'>
-												{book.averageRating.toFixed(1)} / 5
-											</p>
-										</Rating>
+									<div className='mt-1 flex items-center'>
+										{[...Array(5)].map((_, i) => (
+											<svg
+												key={i}
+												className={`w-5 h-5 ${
+													i < Math.round(book.averageRating || 0)
+														? 'text-yellow-300'
+														: 'text-gray-300'
+												}`}
+												aria-hidden='true'
+												xmlns='http://www.w3.org/2000/svg'
+												fill='currentColor'
+												viewBox='0 0 22 20'
+											>
+												<path d='M20.924 7.625a1.523 1.523 0 0 0-1.238-1.044l-5.051-.734-2.259-4.577a1.534 1.534 0 0 0-2.752 0L7.365 5.847l-5.051.734A1.535 1.535 0 0 0 1.463 9.2l3.656 3.563-.863 5.031a1.532 1.532 0 0 0 2.226 1.616L11 17.033l4.518 2.375a1.534 1.534 0 0 0 2.226-1.617l-.863-5.03L20.537 9.2a1.523 1.523 0 0 0 .387-1.575Z' />
+											</svg>
+										))}
+										<p className='ml-2 text-sm font-medium text-gray-500'>
+											{book.averageRating.toFixed(1)} / 5
+										</p>
 									</div>
 								</div>
 							)}
@@ -143,9 +172,12 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 									<span className='font-medium'>Kategorie:</span>
 									<div className='flex flex-wrap gap-2 mt-1'>
 										{book.categories.map((category, index) => (
-											<Badge key={index} color='info'>
+											<span
+												key={index}
+												className='bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full'
+											>
 												{category}
-											</Badge>
+											</span>
 										))}
 									</div>
 								</div>
@@ -162,16 +194,9 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 							)}
 						</div>
 					</div>
-				</Modal.Body>
-			</Modal>
-
-			{showLoginModal && (
-				<LoginModal
-					onClose={() => setShowLoginModal(false)}
-					onSuccess={saveBookToLibrary}
-				/>
-			)}
-		</>
+				</div>
+			</div>
+		</div>
 	);
 };
 
