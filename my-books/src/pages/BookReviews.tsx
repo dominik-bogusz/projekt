@@ -3,18 +3,30 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '../api/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Book } from '../types/book';
-import { Review } from '../types/review';
+import { Review, UserProfile } from '../types/review';
 import ReviewForm from '../components/ReviewForm';
 import ReviewsList from '../components/ReviewsList';
 import RatingStars from '../components/RatingStars';
 import Tabs from '../components/Tabs';
 import { getBookById } from '../api/googleBooks';
 
+// Typ dla recenzji z dołączonym użytkownikiem
+type ReviewWithUser = Review & { user: UserProfile };
+
+// Zgodny z oczekiwaniami komponentu ReviewForm
+interface ReviewFormData {
+	id: string;
+	rating: number;
+	content: string;
+}
+
 const BookReviews: React.FC = () => {
 	const { id } = useParams<{ id: string }>();
 	const [book, setBook] = useState<Book | null>(null);
-	const [reviews, setReviews] = useState<any[]>([]);
-	const [userReview, setUserReview] = useState<any | null>(null);
+	const [reviews, setReviews] = useState<ReviewWithUser[]>([]);
+	const [userReview, setUserReview] = useState<ReviewFormData | undefined>(
+		undefined
+	);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const { user } = useAuth();
@@ -94,8 +106,17 @@ const BookReviews: React.FC = () => {
 
 			// Sprawdź, czy użytkownik już dodał recenzję
 			if (user) {
-				const userReview = data?.find((review) => review.user_id === user.id);
-				setUserReview(userReview || null);
+				const review = data?.find((review) => review.user_id === user.id);
+				if (review) {
+					// Mapujemy do struktury oczekiwanej przez ReviewForm
+					setUserReview({
+						id: review.id,
+						rating: review.rating,
+						content: review.content,
+					});
+				} else {
+					setUserReview(undefined);
+				}
 			}
 		} catch (err) {
 			console.error('Error fetching reviews:', err);
@@ -108,7 +129,8 @@ const BookReviews: React.FC = () => {
 	useEffect(() => {
 		fetchBookData();
 		fetchReviews();
-	}, [id, user]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [id, user?.id]);
 
 	const handleReviewSubmitted = () => {
 		fetchReviews();
@@ -202,7 +224,14 @@ const BookReviews: React.FC = () => {
 						<ReviewsList
 							reviews={reviews}
 							currentUserId={user?.id}
-							onEditReview={(review) => setUserReview(review)}
+							onEditReview={(review) => {
+								// Upewnij się, że przekazujesz obiekt zgodny z typem ReviewFormData
+								setUserReview({
+									id: review.id,
+									rating: review.rating,
+									content: review.content,
+								});
+							}}
 						/>
 					</Tabs.Item>
 

@@ -7,7 +7,6 @@ import {
 	HiOutlineUserGroup,
 	HiOutlineSwitchHorizontal,
 } from 'react-icons/hi';
-import { BsFacebook, BsInstagram, BsTwitter } from 'react-icons/bs';
 
 const Footer: React.FC = () => {
 	return (
@@ -112,28 +111,10 @@ const Footer: React.FC = () => {
 					</div>
 				</div>
 				<hr className='my-6 border-gray-200 sm:mx-auto lg:my-8' />
-				<div className='sm:flex sm:items-center sm:justify-between'>
-					<span className='text-sm text-gray-500 sm:text-center'>
-						© {new Date().getFullYear()}{' '}
-						<a href='#' className='hover:underline'>
-							My Books™
-						</a>
-						. Wszelkie prawa zastrzeżone.
+				<div className='text-center'>
+					<span className='text-sm text-gray-500'>
+						© {new Date().getFullYear()} My Books™. Wszelkie prawa zastrzeżone.
 					</span>
-					<div className='flex mt-4 space-x-6 sm:justify-center sm:mt-0'>
-						<a href='#' className='text-gray-500 hover:text-gray-900'>
-							<BsFacebook className='w-5 h-5' />
-							<span className='sr-only'>Facebook</span>
-						</a>
-						<a href='#' className='text-gray-500 hover:text-gray-900'>
-							<BsInstagram className='w-5 h-5' />
-							<span className='sr-only'>Instagram</span>
-						</a>
-						<a href='#' className='text-gray-500 hover:text-gray-900'>
-							<BsTwitter className='w-5 h-5' />
-							<span className='sr-only'>Twitter</span>
-						</a>
-					</div>
 				</div>
 			</div>
 		</footer>

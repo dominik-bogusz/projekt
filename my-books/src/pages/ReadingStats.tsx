@@ -2,8 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../api/supabase';
 
+// Definiujemy interfejs dla danych statystycznych
+interface ReadingStatistics {
+	totalBooks: number;
+	booksRead: number;
+	currentlyReading: number;
+	wantToRead: number;
+	pagesRead: number;
+	genreDistribution: Record<string, number>;
+	readingHistory: ReadingHistoryItem[];
+}
+
+// Interfejs dla pojedynczego elementu historii czytania
+interface ReadingHistoryItem {
+	month: string;
+	count: number;
+}
+
 const ReadingStats: React.FC = () => {
-	const [stats, setStats] = useState<any>({
+	const [stats, setStats] = useState<ReadingStatistics>({
 		totalBooks: 0,
 		booksRead: 0,
 		currentlyReading: 0,
@@ -72,8 +89,10 @@ const ReadingStats: React.FC = () => {
 				});
 
 				// Reading history (books completed by month)
-				const readingHistory = [];
+				const readingHistory: ReadingHistoryItem[] = [];
 				// Logic for reading history by month would go here
+				// Przykład:
+				// readingHistory.push({ month: "2024-03", count: 5 });
 
 				setStats({
 					totalBooks,
@@ -173,7 +192,7 @@ const ReadingStats: React.FC = () => {
 					) : (
 						<div className='space-y-4'>
 							{Object.entries(stats.genreDistribution)
-								.sort((a, b) => (b[1] as number) - (a[1] as number))
+								.sort((a, b) => b[1] - a[1])
 								.slice(0, 5)
 								.map(([genre, count]) => (
 									<div key={genre}>
@@ -187,7 +206,7 @@ const ReadingStats: React.FC = () => {
 												style={{
 													width: `${Math.min(
 														100,
-														((count as number) / stats.totalBooks) * 100
+														(count / stats.totalBooks) * 100
 													)}%`,
 												}}
 											></div>

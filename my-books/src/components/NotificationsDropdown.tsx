@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useNotifications } from '../context/NotificationContext';
-import { HiBell, HiOutlineCheck } from 'react-icons/hi';
+import { HiBell } from 'react-icons/hi';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
+import { Notification } from '../types/notification';
 
 const NotificationsDropdown: React.FC = () => {
 	const { notifications, unreadCount, markAsRead, markAllAsRead } =
@@ -28,7 +29,7 @@ const NotificationsDropdown: React.FC = () => {
 		};
 	}, []);
 
-	const getNotificationLink = (notification: any) => {
+	const getNotificationLink = (notification: Notification) => {
 		switch (notification.type) {
 			case 'exchange_request':
 			case 'exchange_response':

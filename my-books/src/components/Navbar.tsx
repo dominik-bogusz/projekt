@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import LoginModal from './LoginModal';
@@ -8,10 +8,7 @@ import {
 	HiOutlineSearch,
 	HiOutlineBookOpen,
 	HiOutlinePlusCircle,
-	HiOutlineChatAlt,
-	HiOutlineSwitchHorizontal,
 	HiOutlineUserGroup,
-	HiOutlineChartBar,
 	HiMenu,
 	HiX,
 } from 'react-icons/hi';

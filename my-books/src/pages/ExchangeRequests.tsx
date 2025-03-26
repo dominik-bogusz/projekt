@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../api/supabase';
 import { ExchangeRequest } from '../types/exchange';
@@ -15,7 +15,7 @@ const ExchangeRequests: React.FC = () => {
 	const [activeTab, setActiveTab] = useState('incoming');
 	const { user } = useAuth();
 
-	const fetchRequests = async () => {
+	const fetchRequests = useCallback(async () => {
 		if (!user) return;
 
 		setIsLoading(true);
@@ -56,7 +56,7 @@ const ExchangeRequests: React.FC = () => {
 		} finally {
 			setIsLoading(false);
 		}
-	};
+	}, [user]);
 
 	useEffect(() => {
 		fetchRequests();
@@ -94,7 +94,7 @@ const ExchangeRequests: React.FC = () => {
 			incomingSubscription.unsubscribe();
 			outgoingSubscription.unsubscribe();
 		};
-	}, [user]);
+	}, [user, fetchRequests]);
 
 	const handleRequestAction = async (
 		requestId: string,
@@ -231,7 +231,7 @@ const ExchangeRequests: React.FC = () => {
 										<div className='flex mb-4 md:mb-0 md:mr-6'>
 											<img
 												src={
-													request.book.thumbnail ||
+													request.book.imageLinks?.thumbnail ||
 													'https://via.placeholder.com/128x192?text=Brak+Okładki'
 												}
 												alt={request.book.title}
@@ -318,7 +318,7 @@ const ExchangeRequests: React.FC = () => {
 										<div className='flex mb-4 md:mb-0 md:mr-6'>
 											<img
 												src={
-													request.book.thumbnail ||
+													request.book.imageLinks?.thumbnail ||
 													'https://via.placeholder.com/128x192?text=Brak+Okładki'
 												}
 												alt={request.book.title}
