@@ -11,7 +11,7 @@ import UserProfile from './pages/UserProfile';
 import CommunityPage from './pages/CommunityPage';
 import ExchangeRequests from './pages/ExchangeRequests';
 import Messages from './pages/Messages';
-import AllNotifications from './pages/AllNotifications';
+import AllNotifications from './pages/AllNotifications.tsx';
 import ReadingStats from './pages/ReadingStats';
 import BookShelves from './pages/BookShelves';
 import Navbar from './components/Navbar';
