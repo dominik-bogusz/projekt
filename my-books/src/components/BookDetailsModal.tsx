@@ -302,12 +302,19 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 	const getCoverImageUrl = () => {
 		// Najpierw sprawdzamy, czy mamy debugInfo z danymi z bazy
 		if (debugInfo && debugInfo.thumbnail) {
+			// Sprawdź, czy to pełny URL (zaczyna się od http lub https)
+			if (debugInfo.thumbnail.startsWith('http')) {
+				return debugInfo.thumbnail;
+			}
+
 			// Sprawdź, czy to ścieżka do pliku w storage
 			if (debugInfo.thumbnail.includes('/')) {
 				// Może to być ścieżka względna do bucketa
 				return getPublicURL(debugInfo.thumbnail) || debugInfo.thumbnail;
 			}
-			return debugInfo.thumbnail;
+
+			// Inaczej to może być tylko nazwa pliku, uzyskaj publiczny URL
+			return getPublicURL(debugInfo.thumbnail) || debugInfo.thumbnail;
 		}
 
 		// Jeśli nie mamy danych z bazy, próbujemy standardowych ścieżek
@@ -316,11 +323,18 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 		}
 
 		if (book.thumbnail) {
-			// Jeśli to nazwa pliku bez ścieżki, próbujemy skonstruować pełny URL
-			if (!book.thumbnail.startsWith('http') && !book.thumbnail.includes('/')) {
+			// Jeśli to pełny URL, użyj go bezpośrednio
+			if (book.thumbnail.startsWith('http')) {
+				return book.thumbnail;
+			}
+
+			// Jeśli to ścieżka do pliku, uzyskaj publiczny URL
+			if (book.thumbnail.includes('/')) {
 				return getPublicURL(book.thumbnail) || book.thumbnail;
 			}
-			return book.thumbnail;
+
+			// Inaczej to może być tylko nazwa pliku
+			return getPublicURL(book.thumbnail) || book.thumbnail;
 		}
 
 		return 'https://via.placeholder.com/128x192?text=Brak+Okładki';

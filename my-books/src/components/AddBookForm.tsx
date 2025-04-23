@@ -122,6 +122,7 @@ const AddBookForm: React.FC = () => {
 					throw new Error('Brak danych po przesłaniu pliku');
 				}
 
+				// Get the public URL for the uploaded file
 				const { data: urlData } = supabase.storage
 					.from('book-covers')
 					.getPublicUrl(filename);
@@ -131,6 +132,9 @@ const AddBookForm: React.FC = () => {
 				}
 
 				coverUrl = urlData.publicUrl;
+
+				// Log the resulting URL for verification
+				console.log('Successfully uploaded image, public URL:', coverUrl);
 			}
 
 			const { error: insertError } = await supabase.from('books').insert([
@@ -140,7 +144,7 @@ const AddBookForm: React.FC = () => {
 					description: formData.description,
 					published_date: formData.publishedDate,
 					publisher: formData.publisher,
-					thumbnail: coverUrl,
+					thumbnail: coverUrl, // Store the public URL
 					user_id: session.user.id,
 					is_custom: true,
 				},

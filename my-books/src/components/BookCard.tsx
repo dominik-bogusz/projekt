@@ -23,6 +23,46 @@ const BookCard: React.FC<BookCardProps> = ({
 	const { user } = useAuth();
 	const defaultCover = 'https://via.placeholder.com/128x192?text=Brak+Okładki';
 
+	// Helper function to get proper image URL
+	const getProperImageUrl = (book: Book): string => {
+		// If no image links or thumbnail, return default image
+		if (!book.imageLinks?.thumbnail && !book.thumbnail) {
+			return defaultCover;
+		}
+
+		// First try to use the thumbnail from imageLinks (Google Books API)
+		if (book.imageLinks?.thumbnail) {
+			return book.imageLinks.thumbnail;
+		}
+
+		// If we have a thumbnail from our database
+		if (book.thumbnail) {
+			// Check if it's a full URL (starts with http or https)
+			if (book.thumbnail.startsWith('http')) {
+				return book.thumbnail;
+			}
+
+			// Check if it's a Supabase storage URL (contains a path structure)
+			if (book.thumbnail.includes('/')) {
+				// It's a relative path, get the public URL
+				const { publicUrl } = supabase.storage
+					.from('book-covers')
+					.getPublicUrl(book.thumbnail);
+
+				return publicUrl;
+			}
+
+			// Otherwise, it might be just the filename, construct the full path
+			const { publicUrl } = supabase.storage
+				.from('book-covers')
+				.getPublicUrl(book.thumbnail);
+
+			return publicUrl;
+		}
+
+		return defaultCover;
+	};
+
 	const handleAddClick = (e: React.MouseEvent) => {
 		e.stopPropagation();
 		if (!user) {
@@ -146,10 +186,7 @@ const BookCard: React.FC<BookCardProps> = ({
 					<div className='w-32 h-48 flex-shrink-0'>
 						{!imageError ? (
 							<img
-								// WAŻNA ZMIANA: Dodanie thumbnail jako alternatywy
-								src={
-									book.imageLinks?.thumbnail || book.thumbnail || defaultCover
-								}
+								src={getProperImageUrl(book)}
 								alt={book.title}
 								className='w-full h-full object-cover rounded'
 								onError={(e) => {

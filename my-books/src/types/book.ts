@@ -14,6 +14,7 @@ export interface Book {
 	averageRating?: number;
 	publisher?: string;
 	isCustom?: boolean;
+	thumbnail?: string; // Added this property to support direct thumbnail URLs
 }
 
 export interface GoogleBookResponse {
