@@ -1,4 +1,3 @@
-// src/types/profile.ts (aktualizacja)
 export interface UserProfile {
 	id: string;
 	user_id: string;
@@ -10,7 +9,7 @@ export interface UserProfile {
 	website: string | null;
 	created_at: string;
 	is_public: boolean;
-	email?: string | null; // Dodajemy pole email
+	email?: string | null;
 }
 
 export interface BookShelf {

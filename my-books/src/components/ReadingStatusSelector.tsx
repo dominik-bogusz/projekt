@@ -1,4 +1,3 @@
-// src/components/ReadingStatusSelector.tsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../api/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -21,7 +20,6 @@ const ReadingStatusSelector: React.FC<ReadingStatusSelectorProps> = ({
 
 		const fetchStatus = async () => {
 			try {
-				// Najpierw sprawdź, czy mamy ID książki w naszej bazie
 				const { data: bookData, error: bookError } = await supabase
 					.from('books')
 					.select('id')
@@ -56,7 +54,6 @@ const ReadingStatusSelector: React.FC<ReadingStatusSelectorProps> = ({
 
 		setIsLoading(true);
 		try {
-			// Znajdź rzeczywiste ID książki w bazie danych
 			const { data: bookData, error: bookError } = await supabase
 				.from('books')
 				.select('id')
@@ -73,7 +70,6 @@ const ReadingStatusSelector: React.FC<ReadingStatusSelectorProps> = ({
 
 			const dbBookId = bookData.id;
 
-			// Sprawdź, czy istnieje już status
 			const { data: statusData, error: statusError } = await supabase
 				.from('reading_status')
 				.select('id')
@@ -84,9 +80,7 @@ const ReadingStatusSelector: React.FC<ReadingStatusSelectorProps> = ({
 			if (statusError && statusError.code !== 'PGRST116') throw statusError;
 
 			if (statusData) {
-				// Istnieje status, zaktualizuj go
 				if (currentStatus === status) {
-					// Jeśli kliknięto ten sam status, usuń go
 					const { error: deleteError } = await supabase
 						.from('reading_status')
 						.delete()
@@ -97,7 +91,6 @@ const ReadingStatusSelector: React.FC<ReadingStatusSelectorProps> = ({
 					setCurrentStatus(null);
 					if (onStatusChange) onStatusChange('');
 				} else {
-					// Aktualizuj status
 					const { error: updateError } = await supabase
 						.from('reading_status')
 						.update({ status, updated_at: new Date().toISOString() })
@@ -109,7 +102,6 @@ const ReadingStatusSelector: React.FC<ReadingStatusSelectorProps> = ({
 					if (onStatusChange) onStatusChange(status);
 				}
 			} else {
-				// Dodaj nowy status
 				const { error: insertError } = await supabase
 					.from('reading_status')
 					.insert([

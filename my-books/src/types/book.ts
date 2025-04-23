@@ -13,7 +13,7 @@ export interface Book {
 	language?: string;
 	averageRating?: number;
 	publisher?: string;
-	isCustom?: boolean; // Oznaczenie czy książka została dodana przez użytkownika
+	isCustom?: boolean;
 }
 
 export interface GoogleBookResponse {

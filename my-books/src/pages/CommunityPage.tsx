@@ -1,4 +1,3 @@
-// src/pages/CommunityPage.tsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../api/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -18,7 +17,6 @@ const CommunityPage: React.FC = () => {
 			setIsLoading(true);
 
 			try {
-				// Fetch public profiles
 				const { data: profiles, error } = await supabase
 					.from('profiles')
 					.select('*')
@@ -27,7 +25,6 @@ const CommunityPage: React.FC = () => {
 
 				if (error) throw error;
 
-				// Upewnij się, że każdy profil ma wyświetlaną nazwę
 				const processedProfiles = (profiles || []).map((profile) => ({
 					...profile,
 					display_name:
@@ -38,7 +35,6 @@ const CommunityPage: React.FC = () => {
 
 				setUsers(processedProfiles);
 
-				// If user is logged in, fetch following status
 				if (user) {
 					const { data: following, error: followingError } = await supabase
 						.from('followers')
@@ -65,7 +61,6 @@ const CommunityPage: React.FC = () => {
 	}, [user]);
 
 	const handleFollowToggle = async () => {
-		// Refresh following status
 		if (user) {
 			const { data, error } = await supabase
 				.from('followers')

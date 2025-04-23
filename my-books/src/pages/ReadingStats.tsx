@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../api/supabase';
 
-// Definiujemy interfejs dla danych statystycznych
 interface ReadingStatistics {
 	totalBooks: number;
 	booksRead: number;
@@ -13,7 +12,6 @@ interface ReadingStatistics {
 	readingHistory: ReadingHistoryItem[];
 }
 
-// Interfejs dla pojedynczego elementu historii czytania
 interface ReadingHistoryItem {
 	month: string;
 	count: number;
@@ -38,7 +36,6 @@ const ReadingStats: React.FC = () => {
 		const fetchStats = async () => {
 			setIsLoading(true);
 			try {
-				// Fetch total books in library
 				const { data: booksData, error: booksError } = await supabase
 					.from('books')
 					.select('*')
@@ -46,7 +43,6 @@ const ReadingStats: React.FC = () => {
 
 				if (booksError) throw booksError;
 
-				// Fetch reading status
 				const { data: statusData, error: statusError } = await supabase
 					.from('reading_status')
 					.select('*')
@@ -54,7 +50,6 @@ const ReadingStats: React.FC = () => {
 
 				if (statusError) throw statusError;
 
-				// Calculate stats
 				const totalBooks = booksData?.length || 0;
 				const booksRead =
 					statusData?.filter((s) => s.status === 'read').length || 0;
@@ -64,7 +59,6 @@ const ReadingStats: React.FC = () => {
 				const wantToRead =
 					statusData?.filter((s) => s.status === 'want_to_read').length || 0;
 
-				// Calculate pages read (if page count data is available)
 				let pagesRead = 0;
 				const readBookIds =
 					statusData
@@ -78,7 +72,6 @@ const ReadingStats: React.FC = () => {
 					0
 				);
 
-				// Genre distribution
 				const genres: Record<string, number> = {};
 				booksData?.forEach((book) => {
 					if (book.categories) {
@@ -88,11 +81,7 @@ const ReadingStats: React.FC = () => {
 					}
 				});
 
-				// Reading history (books completed by month)
 				const readingHistory: ReadingHistoryItem[] = [];
-				// Logic for reading history by month would go here
-				// Przykład:
-				// readingHistory.push({ month: "2024-03", count: 5 });
 
 				setStats({
 					totalBooks,

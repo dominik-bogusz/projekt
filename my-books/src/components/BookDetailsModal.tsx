@@ -1,4 +1,3 @@
-// src/components/BookDetailsModal.tsx (zmodyfikowany)
 import React, { useState } from 'react';
 import { Book } from '../types/book';
 import { useAuth } from '../context/AuthContext';
@@ -16,7 +15,6 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 }) => {
 	const { user } = useAuth();
 	const [imageError, setImageError] = useState(false);
-	const defaultCover = 'https://via.placeholder.com/128x192?text=Brak+Okładki';
 
 	const saveBookToLibrary = async () => {
 		if (!user) {
@@ -25,7 +23,6 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 		}
 
 		try {
-			// Sprawdź, czy książka już istnieje w bibliotece
 			const { data: existingBook, error: checkError } = await supabase
 				.from('books')
 				.select('id')
@@ -62,13 +59,11 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 		}
 	};
 
-	// Funkcja do usuwania książki z biblioteki
 	const removeBookFromLibrary = async () => {
 		if (!user) return;
 
 		if (window.confirm('Czy na pewno chcesz usunąć tę książkę z biblioteki?')) {
 			try {
-				// Znajdź rekord w bazie danych
 				const { data, error: findError } = await supabase
 					.from('books')
 					.select('id')
@@ -79,15 +74,12 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 				if (findError) throw findError;
 
 				if (data) {
-					// Usuń rekord z bazy
 					const { error: deleteError } = await supabase
 						.from('books')
 						.delete()
 						.eq('id', data.id);
 
 					if (deleteError) throw deleteError;
-
-					// Usuń również status czytania
 					await supabase
 						.from('reading_status')
 						.delete()
@@ -103,8 +95,6 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 			}
 		}
 	};
-
-	// Sprawdź, czy książka jest już w bibliotece
 	const [isInLibrary, setIsInLibrary] = React.useState(false);
 
 	React.useEffect(() => {

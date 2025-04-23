@@ -1,4 +1,3 @@
-// src/components/UserCard.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { UserProfile } from '../types/profile';
@@ -23,7 +22,6 @@ const UserCard: React.FC<UserCardProps> = ({
 
 		try {
 			if (isFollowing) {
-				// Unfollow
 				const { error } = await supabase
 					.from('followers')
 					.delete()
@@ -32,7 +30,6 @@ const UserCard: React.FC<UserCardProps> = ({
 
 				if (error) throw error;
 			} else {
-				// Follow
 				const { error } = await supabase.from('followers').insert([
 					{
 						follower_id: currentUser.id,
@@ -51,7 +48,6 @@ const UserCard: React.FC<UserCardProps> = ({
 		}
 	};
 
-	// Używamy display_name albo pierwszej części adresu email
 	const displayName =
 		user.display_name ||
 		(user.email && user.email.split('@')[0]) ||

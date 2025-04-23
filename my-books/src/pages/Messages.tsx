@@ -22,7 +22,6 @@ const MessagesPage: React.FC = () => {
 		const fetchConversations = async () => {
 			setIsLoading(true);
 			try {
-				// Get unique users that current user has messaged with
 				const { data: sentMessages, error: sentError } = await supabase
 					.from('messages')
 					.select('recipient_id')
@@ -37,7 +36,6 @@ const MessagesPage: React.FC = () => {
 
 				if (sentError || receivedError) throw sentError || receivedError;
 
-				// Combine and get unique user IDs
 				const sentToIds = sentMessages?.map((m) => m.recipient_id) || [];
 				const receivedFromIds = receivedMessages?.map((m) => m.sender_id) || [];
 				const uniqueUserIds = [...new Set([...sentToIds, ...receivedFromIds])];
@@ -47,7 +45,6 @@ const MessagesPage: React.FC = () => {
 					return;
 				}
 
-				// Fetch user profiles
 				const { data: profiles, error: profilesError } = await supabase
 					.from('profiles')
 					.select('*')
@@ -77,7 +74,6 @@ const MessagesPage: React.FC = () => {
 
 		setIsLoading(true);
 		try {
-			// Get messages between current user and selected user
 			const { data, error } = await supabase
 				.from('messages')
 				.select(
@@ -95,7 +91,6 @@ const MessagesPage: React.FC = () => {
 
 			setMessages(data || []);
 
-			// Mark unread messages as read
 			await supabase
 				.from('messages')
 				.update({ is_read: true })
@@ -129,7 +124,6 @@ const MessagesPage: React.FC = () => {
 
 			if (error) throw error;
 
-			// Add notification for recipient
 			await supabase.from('notifications').insert([
 				{
 					user_id: selectedUser.id,

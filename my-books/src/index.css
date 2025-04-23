@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Twoje własne style CSS */
 body {
 	@apply bg-gray-50;
 }

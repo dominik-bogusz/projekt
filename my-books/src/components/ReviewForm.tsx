@@ -44,7 +44,6 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
 
 		try {
 			if (existingReview) {
-				// Aktualizacja istniejącej recenzji
 				const { error } = await supabase
 					.from('reviews')
 					.update({
@@ -56,7 +55,6 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
 
 				if (error) throw error;
 			} else {
-				// Dodanie nowej recenzji
 				const { error } = await supabase.from('reviews').insert([
 					{
 						user_id: user.id,
@@ -69,7 +67,6 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
 				if (error) throw error;
 			}
 
-			// Aktualizacja średniej oceny książki
 			const { data: reviews } = await supabase
 				.from('reviews')
 				.select('rating')

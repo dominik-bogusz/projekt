@@ -23,7 +23,6 @@ const BookExchangeButton: React.FC<BookExchangeButtonProps> = ({
 
 		setIsLoading(true);
 		try {
-			// Najpierw sprawdzamy czy już istnieje prośba o wymianę
 			const { data: existingRequest } = await supabase
 				.from('exchange_requests')
 				.select('*')
@@ -40,7 +39,6 @@ const BookExchangeButton: React.FC<BookExchangeButtonProps> = ({
 				return;
 			}
 
-			// Dodajemy nową prośbę
 			const { error } = await supabase.from('exchange_requests').insert([
 				{
 					requester_id: user.id,
@@ -53,7 +51,6 @@ const BookExchangeButton: React.FC<BookExchangeButtonProps> = ({
 
 			if (error) throw error;
 
-			// Wysyłamy powiadomienie
 			await supabase.from('notifications').insert([
 				{
 					user_id: ownerId,
@@ -73,7 +70,6 @@ const BookExchangeButton: React.FC<BookExchangeButtonProps> = ({
 		}
 	};
 
-	// Nie pokazujemy przycisku, jeśli to nasza książka
 	if (user?.id === ownerId) return null;
 
 	return (

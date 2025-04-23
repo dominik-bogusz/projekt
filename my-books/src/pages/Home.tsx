@@ -14,7 +14,6 @@ const Home: React.FC = () => {
 	const fetchPopularBooks = async () => {
 		setIsLoading(true);
 		try {
-			// Pobieramy popularne książki
 			const response = await searchBooks('bestseller', 6);
 
 			if (response.items && response.items.length > 0) {

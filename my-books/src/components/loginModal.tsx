@@ -22,13 +22,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSuccess }) => {
 
 		try {
 			if (showRegister) {
-				// Rejestracja
 				const { error } = await signUp(email, password);
 				if (error) throw error;
 				alert('Sprawdź swój email, aby potwierdzić rejestrację!');
 				onClose();
 			} else {
-				// Logowanie
 				const { error } = await signIn(email, password);
 				if (error) throw error;
 

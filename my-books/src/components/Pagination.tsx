@@ -11,41 +11,34 @@ const Pagination: React.FC<PaginationProps> = ({
 	totalPages,
 	onPageChange,
 }) => {
-	// Oblicz numery stron do wyświetlenia
 	const getPageNumbers = () => {
 		const pages = [];
 		const maxPagesToShow = 5;
 
 		if (totalPages <= maxPagesToShow) {
-			// Pokaż wszystkie strony jeśli jest ich mniej niż maxPagesToShow
 			for (let i = 1; i <= totalPages; i++) {
 				pages.push(i);
 			}
 		} else {
-			// Zawsze pokaż pierwszą stronę, ostatnią stronę, bieżącą stronę i strony wokół bieżącej
 			const leftSiblingIndex = Math.max(currentPage - 1, 1);
 			const rightSiblingIndex = Math.min(currentPage + 1, totalPages);
 
-			// Pokaż kropki tylko jeśli jest miejsce
 			const shouldShowLeftDots = leftSiblingIndex > 2;
 			const shouldShowRightDots = rightSiblingIndex < totalPages - 1;
 
 			if (!shouldShowLeftDots && shouldShowRightDots) {
-				// Pokaż pierwsze kilka stron
 				for (let i = 1; i <= 3; i++) {
 					pages.push(i);
 				}
 				pages.push('dots' as any);
 				pages.push(totalPages);
 			} else if (shouldShowLeftDots && !shouldShowRightDots) {
-				// Pokaż ostatnie kilka stron
 				pages.push(1);
 				pages.push('dots' as any);
 				for (let i = totalPages - 2; i <= totalPages; i++) {
 					pages.push(i);
 				}
 			} else if (shouldShowLeftDots && shouldShowRightDots) {
-				// Pokaż pierwszą stronę, kropki, bieżącą i sąsiednie, kropki, ostatnią stronę
 				pages.push(1);
 				pages.push('dots' as any);
 				for (let i = leftSiblingIndex; i <= rightSiblingIndex; i++) {
@@ -54,7 +47,6 @@ const Pagination: React.FC<PaginationProps> = ({
 				pages.push('dots' as any);
 				pages.push(totalPages);
 			} else {
-				// Pokaż wszystkie bez kropek
 				for (let i = 1; i <= totalPages; i++) {
 					pages.push(i);
 				}

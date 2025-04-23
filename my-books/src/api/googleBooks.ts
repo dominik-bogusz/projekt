@@ -15,7 +15,6 @@ export const searchBooks = async (
 			query
 		)}&maxResults=${maxResults}&startIndex=${startIndex}`;
 
-		// Dodaj filtr języka jeśli podany
 		if (language) {
 			url += `&langRestrict=${language}`;
 		}
@@ -26,19 +25,16 @@ export const searchBooks = async (
 
 		const response = await axios.get(url);
 
-		// Obsługa braku wyników
 		if (!response.data.items) {
 			return { items: [], totalItems: 0 };
 		}
 
-		// Zwróć prawidłową odpowiedź
 		return {
 			items: response.data.items || [],
 			totalItems: response.data.totalItems || 0,
 		};
 	} catch (error) {
 		console.error('Błąd podczas wyszukiwania książek:', error);
-		// W przypadku błędu, zwróć pustą odpowiedź
 		return { items: [], totalItems: 0 };
 	}
 };

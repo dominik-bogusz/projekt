@@ -10,10 +10,8 @@ import RatingStars from '../components/RatingStars';
 import Tabs from '../components/Tabs';
 import { getBookById } from '../api/googleBooks';
 
-// Typ dla recenzji z dołączonym użytkownikiem
 type ReviewWithUser = Review & { user: UserProfile };
 
-// Zgodny z oczekiwaniami komponentu ReviewForm
 interface ReviewFormData {
 	id: string;
 	rating: number;
@@ -35,7 +33,6 @@ const BookReviews: React.FC = () => {
 		if (!id) return;
 
 		try {
-			// Check if this is a custom book
 			if (id.startsWith('custom_')) {
 				const { data, error } = await supabase
 					.from('books')
@@ -62,7 +59,6 @@ const BookReviews: React.FC = () => {
 				}
 			}
 
-			// If not custom, fetch from Google Books
 			const bookData = await getBookById(id);
 			const volumeInfo = bookData.volumeInfo;
 
@@ -104,11 +100,9 @@ const BookReviews: React.FC = () => {
 
 			setReviews(data || []);
 
-			// Sprawdź, czy użytkownik już dodał recenzję
 			if (user) {
 				const review = data?.find((review) => review.user_id === user.id);
 				if (review) {
-					// Mapujemy do struktury oczekiwanej przez ReviewForm
 					setUserReview({
 						id: review.id,
 						rating: review.rating,
@@ -129,7 +123,6 @@ const BookReviews: React.FC = () => {
 	useEffect(() => {
 		fetchBookData();
 		fetchReviews();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [id, user?.id]);
 
 	const handleReviewSubmitted = () => {
@@ -225,7 +218,6 @@ const BookReviews: React.FC = () => {
 							reviews={reviews}
 							currentUserId={user?.id}
 							onEditReview={(review) => {
-								// Upewnij się, że przekazujesz obiekt zgodny z typem ReviewFormData
 								setUserReview({
 									id: review.id,
 									rating: review.rating,

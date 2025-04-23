@@ -21,7 +21,6 @@ const ExchangeRequests: React.FC = () => {
 		setIsLoading(true);
 
 		try {
-			// Pobierz przychodzące prośby
 			const { data: incoming, error: incomingError } = await supabase
 				.from('exchange_requests')
 				.select(
@@ -35,7 +34,6 @@ const ExchangeRequests: React.FC = () => {
 
 			if (incomingError) throw incomingError;
 
-			// Pobierz wychodzące prośby
 			const { data: outgoing, error: outgoingError } = await supabase
 				.from('exchange_requests')
 				.select(
@@ -61,7 +59,6 @@ const ExchangeRequests: React.FC = () => {
 	useEffect(() => {
 		fetchRequests();
 
-		// Subskrybuj się na zmiany
 		const incomingSubscription = supabase
 			.channel('incoming_requests')
 			.on(
@@ -113,7 +110,6 @@ const ExchangeRequests: React.FC = () => {
 					.update({ status: action === 'accept' ? 'accepted' : 'rejected' })
 					.eq('id', requestId);
 
-				// Powiadomienie
 				const request = incomingRequests.find((r) => r.id === requestId);
 				if (request) {
 					await supabase.from('notifications').insert([

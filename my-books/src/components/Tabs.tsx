@@ -14,7 +14,6 @@ interface TabsProps {
 	children: ReactNode;
 }
 
-// Rozszerzamy interfejs dla komponentu Tabs, dodając właściwość Item
 interface TabsComponent extends React.FC<TabsProps> {
 	Item: React.FC<TabProps>;
 }
@@ -22,7 +21,6 @@ interface TabsComponent extends React.FC<TabsProps> {
 const Tabs: TabsComponent = ({ children }) => {
 	const [activeTab, setActiveTab] = useState(0);
 
-	// Filtrujemy tylko elementy, które są typu TabItem
 	const tabItems = React.Children.toArray(children).filter(
 		(child) =>
 			React.isValidElement(child) &&

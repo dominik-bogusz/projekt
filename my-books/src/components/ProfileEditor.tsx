@@ -1,4 +1,3 @@
-// src/components/ProfileEditor.tsx
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../api/supabase';
@@ -55,7 +54,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
 	const { user } = useAuth();
 
 	const handleInputChange = (
-		e: React.ChangeEvent
+		e: React.ChangeEvent<
 			HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 		>
 	) => {
@@ -81,7 +80,6 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
 		if (file) {
 			setAvatarFile(file);
 
-			// Create preview
 			const reader = new FileReader();
 			reader.onloadend = () => {
 				setAvatarPreview(reader.result as string);
@@ -101,7 +99,6 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
 		try {
 			let avatarUrl = profile.avatar_url;
 
-			// Upload avatar if changed
 			if (avatarFile) {
 				const fileExt = avatarFile.name.split('.').pop();
 				const filePath = `avatars/${user.id}/${Date.now()}.${fileExt}`;
@@ -119,7 +116,6 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
 				avatarUrl = urlData.publicUrl;
 			}
 
-			// Update profile
 			const { data, error } = await supabase
 				.from('profiles')
 				.upsert({
@@ -132,7 +128,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
 					avatar_url: avatarUrl,
 					favorite_genres: selectedGenres.length ? selectedGenres : null,
 					is_public: formData.is_public,
-					email: user.email, // Dodajemy email, aby był widoczny w profilu
+					email: user.email,
 				})
 				.select('*')
 				.single();

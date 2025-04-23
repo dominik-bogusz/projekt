@@ -49,7 +49,6 @@ const AllNotifications: React.FC = () => {
 
 			if (error) throw error;
 
-			// Aktualizujemy stan lokalnie
 			setNotifications(
 				notifications.map((notification) => ({
 					...notification,

@@ -11,7 +11,6 @@ interface AuthContextProps {
   signOut: () => Promise<void>;
 }
 
-// Utworzenie kontekstu z wartością domyślną null, co wymaga późniejszego sprawdzenia
 const AuthContext = createContext<AuthContextProps | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -62,7 +61,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Poprawiona funkcja useAuth z konkretnym typem błędu zamiast undefined
 export const useAuth = (): AuthContextProps => {
   const context = useContext(AuthContext);
   if (!context) {

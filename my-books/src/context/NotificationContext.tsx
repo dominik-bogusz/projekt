@@ -52,7 +52,6 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 	useEffect(() => {
 		fetchNotifications();
 
-		// Subscribe to new notifications
 		if (user) {
 			const subscription = supabase
 				.channel('notification_changes')
@@ -86,7 +85,6 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
 			if (error) throw error;
 
-			// Update local state
 			setNotifications((prev) =>
 				prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
 			);
@@ -108,7 +106,6 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
 			if (error) throw error;
 
-			// Update local state
 			setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
 			setUnreadCount(0);
 		} catch (error) {

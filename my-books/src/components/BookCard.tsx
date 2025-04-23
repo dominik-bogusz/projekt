@@ -1,10 +1,8 @@
-// src/components/BookCard.tsx (zmodyfikowany)
 import React, { useState } from 'react';
 import { Book } from '../types/book';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../api/supabase';
 import BookDetailsModal from './BookDetailsModal';
-import ReadingStatusSelector from './ReadingStatusSelector';
 
 interface BookCardProps {
 	book: Book;
@@ -39,39 +37,73 @@ const BookCard: React.FC<BookCardProps> = ({
 
 		if (window.confirm('Czy na pewno chcesz usunąć tę książkę z biblioteki?')) {
 			try {
-				// Znajdź rekord w bazie danych
-				const { data, error: findError } = await supabase
+				const { data: bookData, error: findError } = await supabase
 					.from('books')
 					.select('id')
 					.eq('user_id', user.id)
 					.or(`google_books_id.eq.${book.id},id.eq.${book.id}`)
 					.single();
 
-				if (findError) throw findError;
-
-				if (data) {
-					// Usuń rekord z bazy
-					const { error: deleteError } = await supabase
-						.from('books')
-						.delete()
-						.eq('id', data.id);
-
-					if (deleteError) throw deleteError;
-
-					// Usuń również status czytania
-					await supabase
-						.from('reading_status')
-						.delete()
-						.eq('user_id', user.id)
-						.eq('book_id', data.id);
-
-					if (onRemove) {
-						onRemove(book.id);
-					}
+				if (findError) {
+					console.error('Błąd podczas wyszukiwania książki:', findError);
+					throw findError;
 				}
+
+				if (!bookData) {
+					alert('Nie znaleziono książki w bazie danych.');
+					return;
+				}
+
+				const bookId = bookData.id;
+
+				const { error: statusError } = await supabase
+					.from('reading_status')
+					.delete()
+					.eq('user_id', user.id)
+					.eq('book_id', bookId);
+
+				if (statusError) {
+					console.error('Błąd podczas usuwania statusu czytania:', statusError);
+				}
+
+				const { error: reviewsError } = await supabase
+					.from('reviews')
+					.delete()
+					.eq('user_id', user.id)
+					.eq('book_id', bookId);
+
+				if (reviewsError) {
+					console.error('Błąd podczas usuwania recenzji:', reviewsError);
+				}
+
+				const { error: shelvesError } = await supabase
+					.from('book_shelf_items')
+					.delete()
+					.eq('book_id', bookId);
+
+				if (shelvesError) {
+					console.error('Błąd podczas usuwania z półek:', shelvesError);
+				}
+
+				const { error: deleteError } = await supabase
+					.from('books')
+					.delete()
+					.eq('id', bookId)
+					.eq('user_id', user.id);
+
+				if (deleteError) {
+					console.error('Błąd podczas usuwania książki:', deleteError);
+					throw deleteError;
+				}
+
+				if (onRemove) {
+					onRemove(book.id);
+				}
+
+				alert('Książka została pomyślnie usunięta z biblioteki');
 			} catch (error) {
 				console.error('Błąd podczas usuwania książki:', error);
-				alert('Wystąpił błąd podczas usuwania książki.');
+				alert('Wystąpił błąd podczas usuwania książki. Spróbuj ponownie.');
 			}
 		}
 	};

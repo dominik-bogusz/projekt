@@ -21,17 +21,16 @@ const Search: React.FC = () => {
 	const [totalResults, setTotalResults] = useState(0);
 
 	const resultsPerPage = 20;
-	const totalPages = Math.min(1000, Math.ceil(totalResults / resultsPerPage)); // Google Books API ogranicza do 1000 wyników
+	const totalPages = Math.min(1000, Math.ceil(totalResults / resultsPerPage));
 
 	useEffect(() => {
 		if (initialQuery) {
 			handleSearchWithoutEvent();
 		}
-	}, [currentPage]); // Re-run search when page changes
+	}, [currentPage]);
 
 	const handleSearch = async (e: React.FormEvent) => {
 		e.preventDefault();
-		// When initiating a new search, reset to page 1
 		setCurrentPage(1);
 		handleSearchWithoutEvent();
 	};
@@ -42,7 +41,6 @@ const Search: React.FC = () => {
 		setIsLoading(true);
 		setError(null);
 
-		// Update search parameters in URL
 		setSearchParams({
 			q: query,
 			lang: language,
@@ -58,7 +56,6 @@ const Search: React.FC = () => {
 				language
 			);
 
-			// Ustaw całkowitą liczbę wyników, ale uwzględnij rzeczywistą liczbę zwróconych elementów dla ostatniej strony
 			if (response.totalItems === 0 || !response.items) {
 				setTotalResults(0);
 				setBooks([]);
@@ -66,7 +63,6 @@ const Search: React.FC = () => {
 				return;
 			}
 
-			// Niektóre wyniki mogą być niedostępne nawet jeśli API twierdzi, że istnieją
 			setTotalResults(response.totalItems);
 
 			const formattedBooks: Book[] = response.items.map((item) => ({
@@ -91,20 +87,17 @@ const Search: React.FC = () => {
 
 			setBooks(sortedBooks);
 
-			// Jeśli zwrócono mniej wyników niż oczekiwano i to jest ostatnia strona, zaktualizuj całkowitą liczbę
 			if (
 				response.items.length < resultsPerPage &&
 				currentPage * resultsPerPage >= response.totalItems
 			) {
 				const adjustedTotal =
 					(currentPage - 1) * resultsPerPage + response.items.length;
-				// Aktualizujemy tylko jeśli rzeczywista liczba jest mniejsza
 				if (adjustedTotal < response.totalItems) {
 					setTotalResults(adjustedTotal);
 				}
 			}
 
-			// Jeśli jesteśmy na stronie, która nie powinna istnieć (zero wyników), wróć do strony 1
 			if (response.items.length === 0 && currentPage > 1) {
 				setCurrentPage(1);
 				setSearchParams({
@@ -123,7 +116,6 @@ const Search: React.FC = () => {
 
 	const handlePageChange = (page: number) => {
 		setCurrentPage(page);
-		// Scroll to top when changing pages
 		window.scrollTo(0, 0);
 	};
 

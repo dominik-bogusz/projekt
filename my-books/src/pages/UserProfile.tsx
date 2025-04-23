@@ -1,4 +1,3 @@
-// src/pages/UserProfile.tsx
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../api/supabase';
@@ -38,9 +37,7 @@ const UserProfilePage: React.FC = () => {
 			setError(null);
 
 			try {
-				// Sprawdź, czy to profil aktualnego użytkownika
 				if (user && user.id === id) {
-					// Jeśli tak, to najpierw sprawdź, czy istnieje profil w bazie
 					const { data: profileData, error: profileError } = await supabase
 						.from('profiles')
 						.select('*')
@@ -51,7 +48,6 @@ const UserProfilePage: React.FC = () => {
 						throw profileError;
 					}
 
-					// Jeśli nie istnieje profil, utwórz go
 					if (!profileData) {
 						const { data: newProfile, error: createError } = await supabase
 							.from('profiles')
@@ -76,7 +72,6 @@ const UserProfilePage: React.FC = () => {
 						setIsOwnProfile(true);
 					}
 				} else {
-					// Fetch profile dla innego użytkownika
 					const { data: profileData, error: profileError } = await supabase
 						.from('profiles')
 						.select('*')
@@ -91,7 +86,6 @@ const UserProfilePage: React.FC = () => {
 						setProfile(profileData);
 						setIsOwnProfile(user?.id === profileData.id);
 
-						// If private profile, check if current user is the owner
 						if (!profileData.is_public && user?.id !== profileData.id) {
 							setError('Ten profil jest prywatny.');
 							setIsLoading(false);
@@ -100,7 +94,6 @@ const UserProfilePage: React.FC = () => {
 					}
 				}
 
-				// Fetch books
 				const { data: booksData, error: booksError } = await supabase
 					.from('books')
 					.select('*')
@@ -123,7 +116,6 @@ const UserProfilePage: React.FC = () => {
 
 				setBooks(formattedBooks);
 
-				// Fetch shelves
 				const { data: shelvesData, error: shelvesError } = await supabase
 					.from('book_shelves')
 					.select('*')
@@ -134,7 +126,6 @@ const UserProfilePage: React.FC = () => {
 
 				setShelves(shelvesData || []);
 
-				// Fetch follow status if user is logged in
 				if (user) {
 					const { data: followData } = await supabase
 						.from('followers')
@@ -146,7 +137,6 @@ const UserProfilePage: React.FC = () => {
 					setIsFollowing(!!followData);
 				}
 
-				// Fetch followers count
 				const { data: followersData, error: followersError } = await supabase
 					.from('followers')
 					.select('id', { count: 'exact' })
@@ -156,7 +146,6 @@ const UserProfilePage: React.FC = () => {
 
 				setFollowersCount(followersData?.length || 0);
 
-				// Fetch following count
 				const { data: followingData, error: followingError } = await supabase
 					.from('followers')
 					.select('id', { count: 'exact' })
@@ -181,7 +170,6 @@ const UserProfilePage: React.FC = () => {
 
 		try {
 			if (isFollowing) {
-				// Unfollow
 				await supabase
 					.from('followers')
 					.delete()
@@ -190,7 +178,6 @@ const UserProfilePage: React.FC = () => {
 
 				setFollowersCount((prev) => prev - 1);
 			} else {
-				// Follow
 				await supabase.from('followers').insert([
 					{
 						follower_id: user.id,
@@ -263,7 +250,9 @@ const UserProfilePage: React.FC = () => {
 
 							<div className='text-center'>
 								<h2 className='text-2xl font-bold'>
-									{profile.display_name || profile.email?.split('@')[0] || 'Użytkownik'}
+									{profile.display_name ||
+										profile.email?.split('@')[0] ||
+										'Użytkownik'}
 								</h2>
 
 								{profile.location && (
@@ -271,7 +260,7 @@ const UserProfilePage: React.FC = () => {
 								)}
 
 								{profile.website && (
-									
+									<a
 										href={
 											profile.website.startsWith('http')
 												? profile.website
@@ -479,7 +468,6 @@ const UserProfilePage: React.FC = () => {
 									Obserwujący ({followersCount})
 								</h3>
 								<div id='followers-container' className='space-y-4'>
-									{/* Followers will be loaded dynamically */}
 								</div>
 							</div>
 
@@ -488,7 +476,6 @@ const UserProfilePage: React.FC = () => {
 									Obserwowani ({followingCount})
 								</h3>
 								<div id='following-container' className='space-y-4'>
-									{/* Following will be loaded dynamically */}
 								</div>
 							</div>
 						</div>

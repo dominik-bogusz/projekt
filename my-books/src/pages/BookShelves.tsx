@@ -56,7 +56,6 @@ const BookShelves: React.FC = () => {
 	const fetchShelfBooks = async (shelfId: string) => {
 		setIsLoading(true);
 		try {
-			// Najpierw pobierz informacje o półce
 			const { data: shelfData, error: shelfError } = await supabase
 				.from('book_shelves')
 				.select('*')
@@ -66,13 +65,11 @@ const BookShelves: React.FC = () => {
 			if (shelfError) throw shelfError;
 			setCurrentShelf(shelfData);
 
-			// Sprawdź, czy użytkownik ma dostęp do tej półki
 			if (shelfData.user_id !== user?.id && !shelfData.is_public) {
 				navigate('/shelves');
 				return;
 			}
 
-			// Pobierz powiązania książek z tą półką
 			const { data: bookShelfItems, error: itemsError } = await supabase
 				.from('book_shelf_items')
 				.select('book_id')
@@ -86,7 +83,6 @@ const BookShelves: React.FC = () => {
 				return;
 			}
 
-			// Pobierz książki na podstawie ich ID
 			const bookIds = bookShelfItems.map((item) => item.book_id);
 			const { data: booksData, error: booksError } = await supabase
 				.from('books')
@@ -133,7 +129,6 @@ const BookShelves: React.FC = () => {
 
 			if (error) throw error;
 
-			// Dodajemy nowo utworzoną półkę do listy
 			if (data && data.length > 0) {
 				setShelves([data[0], ...shelves]);
 				setShowCreateForm(false);
@@ -163,7 +158,6 @@ const BookShelves: React.FC = () => {
 
 			if (error) throw error;
 
-			// Aktualizujemy półkę w lokalnym stanie
 			setShelves(
 				shelves.map((shelf) =>
 					shelf.id === currentShelf.id
@@ -208,10 +202,8 @@ const BookShelves: React.FC = () => {
 
 			if (error) throw error;
 
-			// Usuwamy półkę z lokalnego stanu
 			setShelves(shelves.filter((shelf) => shelf.id !== shelfId));
 
-			// Jeśli usunęliśmy aktualnie wyświetlaną półkę, przekieruj do listy półek
 			if (id === shelfId) {
 				navigate('/shelves');
 			}
@@ -220,7 +212,6 @@ const BookShelves: React.FC = () => {
 		}
 	};
 
-	// Rozpocznij edycję półki
 	const startEditShelf = () => {
 		if (!currentShelf) return;
 
@@ -230,7 +221,6 @@ const BookShelves: React.FC = () => {
 		setShowEditForm(true);
 	};
 
-	// Formularz tworzenia lub edycji półki
 	const renderShelfForm = (isEdit: boolean) => {
 		return (
 			<div className='bg-white p-6 rounded-lg shadow mb-6'>
@@ -313,7 +303,6 @@ const BookShelves: React.FC = () => {
 					<p>Musisz się zalogować, aby zobaczyć półki z książkami.</p>
 				</div>
 			) : id && currentShelf ? (
-				// Widok pojedynczej półki
 				<>
 					<div className='flex justify-between items-center mb-6'>
 						<div>
@@ -346,7 +335,6 @@ const BookShelves: React.FC = () => {
 					<BookList books={books} isLoading={isLoading} />
 				</>
 			) : (
-				// Widok listy półek
 				<>
 					<div className='flex justify-between items-center mb-6'>
 						<h1 className='text-3xl font-bold'>Moje półki</h1>

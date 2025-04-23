@@ -1,4 +1,5 @@
 export interface UserProfile {
+	email: any;
 	id: string;
 	user_id: string;
 	display_name: string | null;
