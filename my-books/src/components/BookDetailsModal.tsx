@@ -1,7 +1,9 @@
+// src/components/BookDetailsModal.tsx (zmodyfikowany)
 import React, { useState } from 'react';
 import { Book } from '../types/book';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../api/supabase';
+import ReadingStatusSelector from './ReadingStatusSelector';
 
 interface BookDetailsModalProps {
 	book: Book;
@@ -23,6 +25,21 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 		}
 
 		try {
+			// Sprawdź, czy książka już istnieje w bibliotece
+			const { data: existingBook, error: checkError } = await supabase
+				.from('books')
+				.select('id')
+				.eq('user_id', user.id)
+				.or(`google_books_id.eq.${book.id},id.eq.${book.id}`)
+				.maybeSingle();
+
+			if (checkError) throw checkError;
+
+			if (existingBook) {
+				alert('Ta książka jest już w Twojej bibliotece!');
+				return;
+			}
+
 			const { error } = await supabase.from('books').insert([
 				{
 					google_books_id: book.id,
@@ -44,6 +61,74 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 			alert('Wystąpił błąd podczas zapisywania książki.');
 		}
 	};
+
+	// Funkcja do usuwania książki z biblioteki
+	const removeBookFromLibrary = async () => {
+		if (!user) return;
+
+		if (window.confirm('Czy na pewno chcesz usunąć tę książkę z biblioteki?')) {
+			try {
+				// Znajdź rekord w bazie danych
+				const { data, error: findError } = await supabase
+					.from('books')
+					.select('id')
+					.eq('user_id', user.id)
+					.or(`google_books_id.eq.${book.id},id.eq.${book.id}`)
+					.single();
+
+				if (findError) throw findError;
+
+				if (data) {
+					// Usuń rekord z bazy
+					const { error: deleteError } = await supabase
+						.from('books')
+						.delete()
+						.eq('id', data.id);
+
+					if (deleteError) throw deleteError;
+
+					// Usuń również status czytania
+					await supabase
+						.from('reading_status')
+						.delete()
+						.eq('user_id', user.id)
+						.eq('book_id', data.id);
+
+					alert('Książka została usunięta z biblioteki.');
+					onClose();
+				}
+			} catch (error) {
+				console.error('Błąd podczas usuwania książki:', error);
+				alert('Wystąpił błąd podczas usuwania książki.');
+			}
+		}
+	};
+
+	// Sprawdź, czy książka jest już w bibliotece
+	const [isInLibrary, setIsInLibrary] = React.useState(false);
+
+	React.useEffect(() => {
+		const checkIfInLibrary = async () => {
+			if (!user) return;
+
+			try {
+				const { data, error } = await supabase
+					.from('books')
+					.select('id')
+					.eq('user_id', user.id)
+					.or(`google_books_id.eq.${book.id},id.eq.${book.id}`)
+					.maybeSingle();
+
+				if (!error) {
+					setIsInLibrary(!!data);
+				}
+			} catch (error) {
+				console.error('Błąd sprawdzania biblioteki:', error);
+			}
+		};
+
+		checkIfInLibrary();
+	}, [book.id, user]);
 
 	return (
 		<div className='fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4'>
@@ -102,24 +187,58 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 								)}
 							</div>
 
-							<button
-								onClick={saveBookToLibrary}
-								className='mt-4 inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300'
-							>
-								<svg
-									className='w-5 h-5 mr-2'
-									fill='currentColor'
-									viewBox='0 0 20 20'
-									xmlns='http://www.w3.org/2000/svg'
-								>
-									<path
-										fillRule='evenodd'
-										d='M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z'
-										clipRule='evenodd'
-									/>
-								</svg>
-								Dodaj do biblioteki
-							</button>
+							{user && (
+								<>
+									{isInLibrary ? (
+										<>
+											<div className='mt-4 text-center'>
+												<span className='bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full'>
+													W Twojej bibliotece
+												</span>
+											</div>
+											<button
+												onClick={removeBookFromLibrary}
+												className='mt-4 inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700'
+											>
+												<svg
+													className='w-4 h-4 mr-2'
+													fill='currentColor'
+													viewBox='0 0 20 20'
+													xmlns='http://www.w3.org/2000/svg'
+												>
+													<path
+														fillRule='evenodd'
+														d='M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z'
+														clipRule='evenodd'
+													/>
+												</svg>
+												Usuń z biblioteki
+											</button>
+										</>
+									) : (
+										<button
+											onClick={saveBookToLibrary}
+											className='mt-4 inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700'
+										>
+											<svg
+												className='w-5 h-5 mr-2'
+												fill='currentColor'
+												viewBox='0 0 20 20'
+												xmlns='http://www.w3.org/2000/svg'
+											>
+												<path
+													fillRule='evenodd'
+													d='M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z'
+													clipRule='evenodd'
+												/>
+											</svg>
+											Dodaj do biblioteki
+										</button>
+									)}
+
+									{isInLibrary && <ReadingStatusSelector bookId={book.id} />}
+								</>
+							)}
 						</div>
 
 						<div className='md:w-2/3 md:pl-8'>

@@ -1,3 +1,4 @@
+// src/components/BookList.tsx
 import React from 'react';
 import { Book } from '../types/book';
 import BookCard from './BookCard';
@@ -5,14 +6,18 @@ import BookCard from './BookCard';
 interface BookListProps {
 	books: Book[];
 	onSaveBook?: (book: Book) => Promise<void>;
+	onRemove?: (bookId: string) => void;
 	showSaveButton?: boolean;
+	showRemoveButton?: boolean;
 	isLoading?: boolean;
 }
 
 const BookList: React.FC<BookListProps> = ({
 	books,
 	onSaveBook,
+	onRemove,
 	showSaveButton = false,
+	showRemoveButton = false,
 	isLoading = false,
 }) => {
 	if (isLoading) {
@@ -47,6 +52,10 @@ const BookList: React.FC<BookListProps> = ({
 					onSave={
 						showSaveButton && onSaveBook ? () => onSaveBook(book) : undefined
 					}
+					onRemove={
+						showRemoveButton && onRemove ? () => onRemove(book.id) : undefined
+					}
+					showRemoveButton={showRemoveButton}
 				/>
 			))}
 		</div>

@@ -1,3 +1,4 @@
+// src/pages/MyBooks.tsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../api/supabase';
@@ -57,6 +58,10 @@ const MyBooks: React.FC = () => {
 		fetchBooks();
 	}, [user, navigate]);
 
+	const handleRemoveBook = (bookId: string) => {
+		setBooks(books.filter((book) => book.id !== bookId));
+	};
+
 	return (
 		<div className='max-w-6xl mx-auto px-4'>
 			<div className='flex justify-between items-center mb-6'>
@@ -69,7 +74,12 @@ const MyBooks: React.FC = () => {
 				</div>
 			)}
 
-			<BookList books={books} isLoading={isLoading} />
+			<BookList
+				books={books}
+				isLoading={isLoading}
+				showRemoveButton={true}
+				onRemove={handleRemoveBook}
+			/>
 		</div>
 	);
 };

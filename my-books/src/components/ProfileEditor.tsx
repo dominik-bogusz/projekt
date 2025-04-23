@@ -1,3 +1,4 @@
+// src/components/ProfileEditor.tsx
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../api/supabase';
@@ -54,7 +55,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
 	const { user } = useAuth();
 
 	const handleInputChange = (
-		e: React.ChangeEvent<
+		e: React.ChangeEvent
 			HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 		>
 	) => {
@@ -131,6 +132,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
 					avatar_url: avatarUrl,
 					favorite_genres: selectedGenres.length ? selectedGenres : null,
 					is_public: formData.is_public,
+					email: user.email, // Dodajemy email, aby był widoczny w profilu
 				})
 				.select('*')
 				.single();

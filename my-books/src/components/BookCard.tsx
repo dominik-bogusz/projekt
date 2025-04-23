@@ -1,25 +1,78 @@
+// src/components/BookCard.tsx (zmodyfikowany)
 import React, { useState } from 'react';
 import { Book } from '../types/book';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../api/supabase';
 import BookDetailsModal from './BookDetailsModal';
+import ReadingStatusSelector from './ReadingStatusSelector';
 
 interface BookCardProps {
 	book: Book;
 	onSave?: () => void;
+	onRemove?: (bookId: string) => void;
+	showRemoveButton?: boolean;
 }
 
-const BookCard: React.FC<BookCardProps> = ({ book, onSave }) => {
+const BookCard: React.FC<BookCardProps> = ({
+	book,
+	onSave,
+	onRemove,
+	showRemoveButton = false,
+}) => {
 	const [showDetails, setShowDetails] = useState(false);
 	const [imageError, setImageError] = useState(false);
 	const { user } = useAuth();
 	const defaultCover = 'https://via.placeholder.com/128x192?text=Brak+Okładki';
 
 	const handleAddClick = (e: React.MouseEvent) => {
-		e.stopPropagation(); // Zapobiega otwieraniu modalu przy kliknięciu przycisku dodaj
+		e.stopPropagation();
 		if (!user) {
 			window.location.href = '/login';
 		} else if (onSave) {
 			onSave();
+		}
+	};
+
+	const handleRemoveClick = async (e: React.MouseEvent) => {
+		e.stopPropagation();
+		if (!user) return;
+
+		if (window.confirm('Czy na pewno chcesz usunąć tę książkę z biblioteki?')) {
+			try {
+				// Znajdź rekord w bazie danych
+				const { data, error: findError } = await supabase
+					.from('books')
+					.select('id')
+					.eq('user_id', user.id)
+					.or(`google_books_id.eq.${book.id},id.eq.${book.id}`)
+					.single();
+
+				if (findError) throw findError;
+
+				if (data) {
+					// Usuń rekord z bazy
+					const { error: deleteError } = await supabase
+						.from('books')
+						.delete()
+						.eq('id', data.id);
+
+					if (deleteError) throw deleteError;
+
+					// Usuń również status czytania
+					await supabase
+						.from('reading_status')
+						.delete()
+						.eq('user_id', user.id)
+						.eq('book_id', data.id);
+
+					if (onRemove) {
+						onRemove(book.id);
+					}
+				}
+			} catch (error) {
+				console.error('Błąd podczas usuwania książki:', error);
+				alert('Wystąpił błąd podczas usuwania książki.');
+			}
 		}
 	};
 
@@ -116,6 +169,27 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSave }) => {
 								/>
 							</svg>
 							Dodaj
+						</button>
+					)}
+
+					{showRemoveButton && (
+						<button
+							onClick={handleRemoveClick}
+							className='inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300'
+						>
+							<svg
+								className='w-5 h-5 mr-2'
+								fill='currentColor'
+								viewBox='0 0 20 20'
+								xmlns='http://www.w3.org/2000/svg'
+							>
+								<path
+									fillRule='evenodd'
+									d='M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z'
+									clipRule='evenodd'
+								/>
+							</svg>
+							Usuń
 						</button>
 					)}
 

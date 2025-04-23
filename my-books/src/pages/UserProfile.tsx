@@ -1,5 +1,6 @@
+// src/pages/UserProfile.tsx
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../api/supabase';
 import { useAuth } from '../context/AuthContext';
 import { UserProfile, BookShelf } from '../types/profile';
@@ -24,6 +25,8 @@ const UserProfilePage: React.FC = () => {
 	const [followingCount, setFollowingCount] = useState(0);
 	const [activeTab, setActiveTab] = useState('books');
 	const [isEditing, setIsEditing] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const navigate = useNavigate();
 
 	const { user } = useAuth();
 
@@ -32,25 +35,68 @@ const UserProfilePage: React.FC = () => {
 
 		const fetchProfile = async () => {
 			setIsLoading(true);
+			setError(null);
 
 			try {
-				// Fetch profile
-				const { data: profileData, error: profileError } = await supabase
-					.from('profiles')
-					.select('*')
-					.eq('id', id)
-					.single();
+				// Sprawdź, czy to profil aktualnego użytkownika
+				if (user && user.id === id) {
+					// Jeśli tak, to najpierw sprawdź, czy istnieje profil w bazie
+					const { data: profileData, error: profileError } = await supabase
+						.from('profiles')
+						.select('*')
+						.eq('id', id)
+						.maybeSingle();
 
-				if (profileError) throw profileError;
+					if (profileError && profileError.code !== 'PGRST116') {
+						throw profileError;
+					}
 
-				if (profileData) {
-					setProfile(profileData);
-					setIsOwnProfile(user?.id === profileData.id);
+					// Jeśli nie istnieje profil, utwórz go
+					if (!profileData) {
+						const { data: newProfile, error: createError } = await supabase
+							.from('profiles')
+							.insert([
+								{
+									id: user.id,
+									user_id: user.id,
+									display_name: user.email?.split('@')[0] || 'Użytkownik',
+									email: user.email,
+									is_public: true,
+								},
+							])
+							.select('*')
+							.single();
 
-					// If private profile, check if current user is the owner
-					if (!profileData.is_public && user?.id !== profileData.id) {
-						// Redirect or show access denied
-						return;
+						if (createError) throw createError;
+
+						setProfile(newProfile);
+						setIsOwnProfile(true);
+					} else {
+						setProfile(profileData);
+						setIsOwnProfile(true);
+					}
+				} else {
+					// Fetch profile dla innego użytkownika
+					const { data: profileData, error: profileError } = await supabase
+						.from('profiles')
+						.select('*')
+						.eq('id', id)
+						.single();
+
+					if (profileError) {
+						throw profileError;
+					}
+
+					if (profileData) {
+						setProfile(profileData);
+						setIsOwnProfile(user?.id === profileData.id);
+
+						// If private profile, check if current user is the owner
+						if (!profileData.is_public && user?.id !== profileData.id) {
+							setError('Ten profil jest prywatny.');
+							setIsLoading(false);
+							return;
+						}
 					}
 				}
 
@@ -121,13 +167,14 @@ const UserProfilePage: React.FC = () => {
 				setFollowingCount(followingData?.length || 0);
 			} catch (error) {
 				console.error('Error fetching profile:', error);
+				setError('Nie udało się załadować profilu. Spróbuj ponownie później.');
 			} finally {
 				setIsLoading(false);
 			}
 		};
 
 		fetchProfile();
-	}, [id, user]);
+	}, [id, user, navigate]);
 
 	const handleFollowToggle = async () => {
 		if (!user || !profile) return;
@@ -180,6 +227,16 @@ const UserProfilePage: React.FC = () => {
 		);
 	}
 
+	if (error) {
+		return (
+			<div className='max-w-6xl mx-auto px-4 py-12'>
+				<div className='bg-red-100 border-l-4 border-red-500 text-red-700 p-4'>
+					<p>{error}</p>
+				</div>
+			</div>
+		);
+	}
+
 	if (!profile) {
 		return (
 			<div className='max-w-6xl mx-auto px-4 py-12'>
@@ -206,7 +263,7 @@ const UserProfilePage: React.FC = () => {
 
 							<div className='text-center'>
 								<h2 className='text-2xl font-bold'>
-									{profile.display_name || 'Użytkownik'}
+									{profile.display_name || profile.email?.split('@')[0] || 'Użytkownik'}
 								</h2>
 
 								{profile.location && (
@@ -214,7 +271,7 @@ const UserProfilePage: React.FC = () => {
 								)}
 
 								{profile.website && (
-									<a
+									
 										href={
 											profile.website.startsWith('http')
 												? profile.website

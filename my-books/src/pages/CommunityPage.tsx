@@ -1,3 +1,4 @@
+// src/pages/CommunityPage.tsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../api/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -26,7 +27,16 @@ const CommunityPage: React.FC = () => {
 
 				if (error) throw error;
 
-				setUsers(profiles || []);
+				// Upewnij się, że każdy profil ma wyświetlaną nazwę
+				const processedProfiles = (profiles || []).map((profile) => ({
+					...profile,
+					display_name:
+						profile.display_name ||
+						profile.email?.split('@')[0] ||
+						'Użytkownik',
+				}));
+
+				setUsers(processedProfiles);
 
 				// If user is logged in, fetch following status
 				if (user) {
@@ -81,6 +91,8 @@ const CommunityPage: React.FC = () => {
 				(u) =>
 					(u.display_name &&
 						u.display_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+					(u.email &&
+						u.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
 					(u.bio && u.bio.toLowerCase().includes(searchQuery.toLowerCase())) ||
 					(u.location &&
 						u.location.toLowerCase().includes(searchQuery.toLowerCase())) ||

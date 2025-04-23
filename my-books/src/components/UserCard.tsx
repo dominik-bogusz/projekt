@@ -1,3 +1,4 @@
+// src/components/UserCard.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { UserProfile } from '../types/profile';
@@ -50,6 +51,12 @@ const UserCard: React.FC<UserCardProps> = ({
 		}
 	};
 
+	// Używamy display_name albo pierwszej części adresu email
+	const displayName =
+		user.display_name ||
+		(user.email && user.email.split('@')[0]) ||
+		'Użytkownik';
+
 	return (
 		<div className='bg-white rounded-lg shadow overflow-hidden'>
 			<div className='p-5'>
@@ -58,7 +65,7 @@ const UserCard: React.FC<UserCardProps> = ({
 						src={
 							user.avatar_url || 'https://via.placeholder.com/100?text=Avatar'
 						}
-						alt={`${user.display_name || 'User'} profile`}
+						alt={`${displayName} profile`}
 						className='w-16 h-16 rounded-full object-cover'
 					/>
 					<div className='flex-1'>
@@ -66,7 +73,7 @@ const UserCard: React.FC<UserCardProps> = ({
 							to={`/users/${user.id}`}
 							className='text-lg font-medium hover:text-blue-600'
 						>
-							{user.display_name || 'Użytkownik'}
+							{displayName}
 						</Link>
 						{user.location && (
 							<p className='text-sm text-gray-500'>{user.location}</p>
@@ -96,7 +103,7 @@ const UserCard: React.FC<UserCardProps> = ({
 				{user.favorite_genres && user.favorite_genres.length > 0 && (
 					<div className='mt-3'>
 						<div className='flex flex-wrap gap-1'>
-							{user.favorite_genres.map((genre, index) => (
+							{user.favorite_genres.slice(0, 3).map((genre, index) => (
 								<span
 									key={index}
 									className='bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded'
@@ -104,6 +111,11 @@ const UserCard: React.FC<UserCardProps> = ({
 									{genre}
 								</span>
 							))}
+							{user.favorite_genres.length > 3 && (
+								<span className='text-xs text-gray-500'>
+									+{user.favorite_genres.length - 3} więcej
+								</span>
+							)}
 						</div>
 					</div>
 				)}
