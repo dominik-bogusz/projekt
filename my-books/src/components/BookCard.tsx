@@ -10,10 +10,12 @@ interface BookCardProps {
 
 const BookCard: React.FC<BookCardProps> = ({ book, onSave }) => {
 	const [showDetails, setShowDetails] = useState(false);
+	const [imageError, setImageError] = useState(false);
 	const { user } = useAuth();
 	const defaultCover = 'https://via.placeholder.com/128x192?text=Brak+Okładki';
 
-	const handleAddClick = () => {
+	const handleAddClick = (e: React.MouseEvent) => {
+		e.stopPropagation(); // Zapobiega otwieraniu modalu przy kliknięciu przycisku dodaj
 		if (!user) {
 			window.location.href = '/login';
 		} else if (onSave) {
@@ -23,16 +25,28 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSave }) => {
 
 	return (
 		<>
-			<div className='bg-white rounded-lg border border-gray-200 shadow-md h-full flex flex-col'>
+			<div
+				className='bg-white rounded-lg border border-gray-200 shadow-md h-full flex flex-col cursor-pointer hover:shadow-lg transition-shadow'
+				onClick={() => setShowDetails(true)}
+			>
 				<div className='flex mb-4 p-4'>
-					<img
-						src={book.imageLinks?.thumbnail || defaultCover}
-						alt={book.title}
-						className='w-32 h-48 object-cover rounded'
-						onError={(e) => {
-							e.currentTarget.src = defaultCover;
-						}}
-					/>
+					<div className='w-32 h-48 flex-shrink-0'>
+						{!imageError ? (
+							<img
+								src={book.imageLinks?.thumbnail || defaultCover}
+								alt={book.title}
+								className='w-full h-full object-cover rounded'
+								onError={(e) => {
+									setImageError(true);
+									e.currentTarget.src = defaultCover;
+								}}
+							/>
+						) : (
+							<div className='w-full h-full bg-gray-200 rounded flex items-center justify-center text-center p-2'>
+								<span className='text-gray-500'>{book.title}</span>
+							</div>
+						)}
+					</div>
 					<div className='ml-4 flex-1'>
 						<h5 className='text-xl font-bold tracking-tight text-gray-900'>
 							{book.title}
@@ -106,7 +120,10 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSave }) => {
 					)}
 
 					<button
-						onClick={() => setShowDetails(true)}
+						onClick={(e) => {
+							e.stopPropagation();
+							setShowDetails(true);
+						}}
 						className='py-2 px-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200'
 					>
 						Szczegóły

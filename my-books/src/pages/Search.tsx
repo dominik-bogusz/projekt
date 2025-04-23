@@ -4,26 +4,35 @@ import { searchBooks } from '../api/googleBooks';
 import { supabase } from '../api/supabase';
 import BookList from '../components/BookList';
 import { Book, GoogleBookResponse } from '../types/book';
+import Pagination from '../components/Pagination';
 
 const Search: React.FC = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const initialQuery = searchParams.get('q') || '';
 	const initialLanguage = searchParams.get('lang') || 'pl';
+	const initialPage = parseInt(searchParams.get('page') || '1', 10);
 
 	const [query, setQuery] = useState(initialQuery);
 	const [books, setBooks] = useState<Book[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [language, setLanguage] = useState(initialLanguage);
+	const [currentPage, setCurrentPage] = useState(initialPage);
+	const [totalResults, setTotalResults] = useState(0);
+
+	const resultsPerPage = 20;
+	const totalPages = Math.min(1000, Math.ceil(totalResults / resultsPerPage)); // Google Books API ogranicza do 1000 wyników
 
 	useEffect(() => {
 		if (initialQuery) {
 			handleSearchWithoutEvent();
 		}
-	}, []);
+	}, [currentPage]); // Re-run search when page changes
 
 	const handleSearch = async (e: React.FormEvent) => {
 		e.preventDefault();
+		// When initiating a new search, reset to page 1
+		setCurrentPage(1);
 		handleSearchWithoutEvent();
 	};
 
@@ -33,21 +42,32 @@ const Search: React.FC = () => {
 		setIsLoading(true);
 		setError(null);
 
-		setSearchParams({ q: query, lang: language });
+		// Update search parameters in URL
+		setSearchParams({
+			q: query,
+			lang: language,
+			page: currentPage.toString(),
+		});
 
 		try {
+			const startIndex = (currentPage - 1) * resultsPerPage;
 			const response: GoogleBookResponse = await searchBooks(
 				query,
-				20,
-				0,
+				resultsPerPage,
+				startIndex,
 				language
 			);
 
-			if (!response.items || response.items.length === 0) {
+			// Ustaw całkowitą liczbę wyników, ale uwzględnij rzeczywistą liczbę zwróconych elementów dla ostatniej strony
+			if (response.totalItems === 0 || !response.items) {
+				setTotalResults(0);
 				setBooks([]);
 				setIsLoading(false);
 				return;
 			}
+
+			// Niektóre wyniki mogą być niedostępne nawet jeśli API twierdzi, że istnieją
+			setTotalResults(response.totalItems);
 
 			const formattedBooks: Book[] = response.items.map((item) => ({
 				id: item.id,
@@ -70,12 +90,41 @@ const Search: React.FC = () => {
 			});
 
 			setBooks(sortedBooks);
+
+			// Jeśli zwrócono mniej wyników niż oczekiwano i to jest ostatnia strona, zaktualizuj całkowitą liczbę
+			if (
+				response.items.length < resultsPerPage &&
+				currentPage * resultsPerPage >= response.totalItems
+			) {
+				const adjustedTotal =
+					(currentPage - 1) * resultsPerPage + response.items.length;
+				// Aktualizujemy tylko jeśli rzeczywista liczba jest mniejsza
+				if (adjustedTotal < response.totalItems) {
+					setTotalResults(adjustedTotal);
+				}
+			}
+
+			// Jeśli jesteśmy na stronie, która nie powinna istnieć (zero wyników), wróć do strony 1
+			if (response.items.length === 0 && currentPage > 1) {
+				setCurrentPage(1);
+				setSearchParams({
+					q: query,
+					lang: language,
+					page: '1',
+				});
+			}
 		} catch (error) {
 			console.error('Błąd wyszukiwania książek:', error);
 			setError('Wystąpił błąd podczas wyszukiwania. Spróbuj ponownie.');
 		} finally {
 			setIsLoading(false);
 		}
+	};
+
+	const handlePageChange = (page: number) => {
+		setCurrentPage(page);
+		// Scroll to top when changing pages
+		window.scrollTo(0, 0);
 	};
 
 	const saveBookToLibrary = async (book: Book) => {
@@ -112,7 +161,7 @@ const Search: React.FC = () => {
 	};
 
 	return (
-		<div className='max-w-6xl mx-auto px-4'>
+		<div className='max-w-6xl mx-auto px-4 py-8'>
 			<h1 className='text-3xl font-bold mb-6'>Wyszukaj książki</h1>
 
 			<form onSubmit={handleSearch} className='mb-8'>
@@ -163,7 +212,7 @@ const Search: React.FC = () => {
 						<button
 							type='submit'
 							disabled={isLoading}
-							className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center'
+							className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center w-full md:w-auto'
 						>
 							{isLoading ? (
 								<>
@@ -187,12 +236,27 @@ const Search: React.FC = () => {
 				</div>
 			)}
 
+			{books.length > 0 && (
+				<div className='text-sm text-gray-600 mb-4'>
+					Znaleziono {totalResults} wyników. Strona {currentPage} z{' '}
+					{totalPages || 1}.
+				</div>
+			)}
+
 			<BookList
 				books={books}
 				onSaveBook={saveBookToLibrary}
 				showSaveButton={true}
 				isLoading={isLoading}
 			/>
+
+			{totalResults > resultsPerPage && (
+				<Pagination
+					currentPage={currentPage}
+					totalPages={totalPages}
+					onPageChange={handlePageChange}
+				/>
+			)}
 		</div>
 	);
 };

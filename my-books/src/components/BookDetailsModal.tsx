@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Book } from '../types/book';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../api/supabase';
@@ -13,6 +13,7 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 	onClose,
 }) => {
 	const { user } = useAuth();
+	const [imageError, setImageError] = useState(false);
 	const defaultCover = 'https://via.placeholder.com/128x192?text=Brak+Okładki';
 
 	const saveBookToLibrary = async () => {
@@ -52,6 +53,7 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 					<button
 						onClick={onClose}
 						className='text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5'
+						aria-label='Zamknij'
 					>
 						<svg
 							className='w-5 h-5'
@@ -71,14 +73,34 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 				<div className='p-6'>
 					<div className='md:flex'>
 						<div className='md:w-1/3 mb-6 md:mb-0 flex flex-col items-center'>
-							<img
-								src={book.imageLinks?.thumbnail || defaultCover}
-								alt={book.title}
-								className='w-48 h-72 object-cover rounded'
-								onError={(e) => {
-									e.currentTarget.src = defaultCover;
-								}}
-							/>
+							<div className='w-48 h-72 bg-gray-100 rounded flex items-center justify-center overflow-hidden'>
+								{!imageError && book.imageLinks?.thumbnail ? (
+									<img
+										src={book.imageLinks.thumbnail}
+										alt={book.title}
+										className='w-full h-full object-cover'
+										onError={() => setImageError(true)}
+									/>
+								) : (
+									<div className='text-center p-4 text-gray-500'>
+										<svg
+											className='mx-auto h-12 w-12 text-gray-400'
+											xmlns='http://www.w3.org/2000/svg'
+											fill='none'
+											viewBox='0 0 24 24'
+											stroke='currentColor'
+										>
+											<path
+												strokeLinecap='round'
+												strokeLinejoin='round'
+												strokeWidth={2}
+												d='M12 6v6m0 0v6m0-6h6m-6 0H6'
+											/>
+										</svg>
+										<p className='mt-2 text-sm'>{book.title}</p>
+									</div>
+								)}
+							</div>
 
 							<button
 								onClick={saveBookToLibrary}
@@ -101,7 +123,7 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 						</div>
 
 						<div className='md:w-2/3 md:pl-8'>
-							<div className='mb-2'>
+							<div className='mb-4'>
 								<span className='text-lg font-medium'>Autor:</span>{' '}
 								<span className='text-gray-700'>
 									{book.authors ? book.authors.join(', ') : 'Nieznany autor'}

@@ -26,14 +26,20 @@ export const searchBooks = async (
 
 		const response = await axios.get(url);
 
+		// Obsługa braku wyników
 		if (!response.data.items) {
 			return { items: [], totalItems: 0 };
 		}
 
-		return response.data;
+		// Zwróć prawidłową odpowiedź
+		return {
+			items: response.data.items || [],
+			totalItems: response.data.totalItems || 0,
+		};
 	} catch (error) {
 		console.error('Błąd podczas wyszukiwania książek:', error);
-		throw new Error('Nie udało się pobrać książek z Google Books API');
+		// W przypadku błędu, zwróć pustą odpowiedź
+		return { items: [], totalItems: 0 };
 	}
 };
 
