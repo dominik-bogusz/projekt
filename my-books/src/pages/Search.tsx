@@ -9,25 +9,26 @@ import Pagination from '../components/Pagination';
 const Search: React.FC = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const initialQuery = searchParams.get('q') || '';
-	const initialLanguage = searchParams.get('lang') || 'pl';
 	const initialPage = parseInt(searchParams.get('page') || '1', 10);
+	const initialCategory = searchParams.get('category') || '';
 
 	const [query, setQuery] = useState(initialQuery);
 	const [books, setBooks] = useState<Book[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [language, setLanguage] = useState(initialLanguage);
 	const [currentPage, setCurrentPage] = useState(initialPage);
 	const [totalResults, setTotalResults] = useState(0);
+	const [category, setCategory] = useState(initialCategory);
+	const [categories, setCategories] = useState<string[]>([]);
 
 	const resultsPerPage = 20;
-	const totalPages = Math.min(1000, Math.ceil(totalResults / resultsPerPage));
+	const totalPages = Math.min(50, Math.ceil(totalResults / resultsPerPage));
 
 	useEffect(() => {
 		if (initialQuery) {
 			handleSearchWithoutEvent();
 		}
-	}, [currentPage]);
+	}, [currentPage, category]);
 
 	const handleSearch = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -41,19 +42,25 @@ const Search: React.FC = () => {
 		setIsLoading(true);
 		setError(null);
 
-		setSearchParams({
+		const searchParamsObj: Record<string, string> = {
 			q: query,
-			lang: language,
 			page: currentPage.toString(),
-		});
+		};
+
+		if (category) {
+			searchParamsObj.category = category;
+		}
+
+		setSearchParams(searchParamsObj);
 
 		try {
 			const startIndex = (currentPage - 1) * resultsPerPage;
+			const fullQuery = category ? `${query}+subject:${category}` : query;
+
 			const response: GoogleBookResponse = await searchBooks(
-				query,
+				fullQuery,
 				resultsPerPage,
-				startIndex,
-				language
+				startIndex
 			);
 
 			if (response.totalItems === 0 || !response.items) {
@@ -79,6 +86,14 @@ const Search: React.FC = () => {
 				publisher: item.volumeInfo.publisher,
 			}));
 
+			// Extract unique categories for filter
+			const allCategories = formattedBooks
+				.flatMap((book) => book.categories || [])
+				.filter((v, i, a) => a.indexOf(v) === i)
+				.sort();
+
+			setCategories(allCategories);
+
 			const sortedBooks = formattedBooks.sort((a, b) => {
 				if (a.imageLinks?.thumbnail && !b.imageLinks?.thumbnail) return -1;
 				if (!a.imageLinks?.thumbnail && b.imageLinks?.thumbnail) return 1;
@@ -102,8 +117,8 @@ const Search: React.FC = () => {
 				setCurrentPage(1);
 				setSearchParams({
 					q: query,
-					lang: language,
 					page: '1',
+					...(category && { category }),
 				});
 			}
 		} catch (error) {
@@ -117,6 +132,11 @@ const Search: React.FC = () => {
 	const handlePageChange = (page: number) => {
 		setCurrentPage(page);
 		window.scrollTo(0, 0);
+	};
+
+	const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+		setCategory(e.target.value);
+		setCurrentPage(1);
 	};
 
 	const saveBookToLibrary = async (book: Book) => {
@@ -145,7 +165,16 @@ const Search: React.FC = () => {
 
 			if (error) throw error;
 
-			alert('Książka została dodana do twojej biblioteki!');
+			// Ciche powiadomienie zamiast alert
+			const notification = document.createElement('div');
+			notification.className =
+				'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg';
+			notification.textContent = 'Książka dodana do biblioteki';
+			document.body.appendChild(notification);
+
+			setTimeout(() => {
+				document.body.removeChild(notification);
+			}, 3000);
 		} catch (error) {
 			console.error('Błąd zapisywania książki:', error);
 			alert('Wystąpił błąd podczas zapisywania książki.');
@@ -186,19 +215,22 @@ const Search: React.FC = () => {
 						/>
 					</div>
 
-					<div className='w-full md:w-36'>
-						<select
-							value={language}
-							onChange={(e) => setLanguage(e.target.value)}
-							className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5'
-						>
-							<option value='pl'>Polski</option>
-							<option value='en'>Angielski</option>
-							<option value='de'>Niemiecki</option>
-							<option value='fr'>Francuski</option>
-							<option value=''>Wszystkie</option>
-						</select>
-					</div>
+					{categories.length > 0 && (
+						<div className='w-full md:w-40'>
+							<select
+								value={category}
+								onChange={handleCategoryChange}
+								className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5'
+							>
+								<option value=''>Wszystkie kategorie</option>
+								{categories.map((cat) => (
+									<option key={cat} value={cat}>
+										{cat}
+									</option>
+								))}
+							</select>
+						</div>
+					)}
 
 					<div>
 						<button
@@ -228,10 +260,15 @@ const Search: React.FC = () => {
 				</div>
 			)}
 
-			{books.length > 0 && (
+			{query && books.length > 0 && (
 				<div className='text-sm text-gray-600 mb-4'>
-					Znaleziono {totalResults} wyników. Strona {currentPage} z{' '}
-					{totalPages || 1}.
+					Znaleziono wyniki dla zapytania: <strong>{query}</strong>
+					{category && (
+						<span>
+							{' '}
+							w kategorii <strong>{category}</strong>
+						</span>
+					)}
 				</div>
 			)}
 
@@ -241,6 +278,17 @@ const Search: React.FC = () => {
 				showSaveButton={true}
 				isLoading={isLoading}
 			/>
+
+			{query && books.length === 0 && !isLoading && (
+				<div className='text-center py-8 bg-white rounded-lg shadow'>
+					<p className='text-gray-500 text-lg'>
+						Brak wyników dla zapytania "{query}"
+					</p>
+					<p className='text-gray-400 mt-2'>
+						Spróbuj zmienić frazę wyszukiwania
+					</p>
+				</div>
+			)}
 
 			{totalResults > resultsPerPage && (
 				<Pagination

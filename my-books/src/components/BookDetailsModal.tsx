@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Book } from '../types/book';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../api/supabase';
@@ -15,6 +15,32 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 }) => {
 	const { user } = useAuth();
 	const [imageError, setImageError] = useState(false);
+	const modalRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (
+				modalRef.current &&
+				!modalRef.current.contains(event.target as Node)
+			) {
+				onClose();
+			}
+		};
+
+		const handleEscKey = (event: KeyboardEvent) => {
+			if (event.key === 'Escape') {
+				onClose();
+			}
+		};
+
+		document.addEventListener('mousedown', handleClickOutside);
+		document.addEventListener('keydown', handleEscKey);
+
+		return () => {
+			document.removeEventListener('mousedown', handleClickOutside);
+			document.removeEventListener('keydown', handleEscKey);
+		};
+	}, [onClose]);
 
 	const saveBookToLibrary = async () => {
 		if (!user) {
@@ -33,7 +59,17 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 			if (checkError) throw checkError;
 
 			if (existingBook) {
-				alert('Ta książka jest już w Twojej bibliotece!');
+				// Ciche powiadomienie zamiast alert
+				const notification = document.createElement('div');
+				notification.className =
+					'fixed bottom-4 right-4 bg-yellow-500 text-white px-4 py-2 rounded shadow-lg';
+				notification.textContent = 'Ta książka jest już w Twojej bibliotece!';
+				document.body.appendChild(notification);
+
+				setTimeout(() => {
+					document.body.removeChild(notification);
+				}, 3000);
+
 				return;
 			}
 
@@ -52,9 +88,20 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 
 			if (error) throw error;
 
-			alert('Książka została dodana do twojej biblioteki!');
+			// Ciche powiadomienie zamiast alert
+			const notification = document.createElement('div');
+			notification.className =
+				'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg';
+			notification.textContent = 'Książka została dodana do Twojej biblioteki!';
+			document.body.appendChild(notification);
+
+			setTimeout(() => {
+				document.body.removeChild(notification);
+			}, 3000);
+
+			setIsSaved(true);
 		} catch (error) {
-			console.error('Błąd zapisywania książki:', error);
+			console.error('Error saving book:', error);
 			alert('Wystąpił błąd podczas zapisywania książki.');
 		}
 	};
@@ -86,7 +133,17 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 						.eq('user_id', user.id)
 						.eq('book_id', data.id);
 
-					alert('Książka została usunięta z biblioteki.');
+					// Ciche powiadomienie zamiast alert
+					const notification = document.createElement('div');
+					notification.className =
+						'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg';
+					notification.textContent = 'Książka została usunięta z biblioteki.';
+					document.body.appendChild(notification);
+
+					setTimeout(() => {
+						document.body.removeChild(notification);
+					}, 3000);
+
 					onClose();
 				}
 			} catch (error) {
@@ -95,7 +152,7 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 			}
 		}
 	};
-	const [isInLibrary, setIsInLibrary] = React.useState(false);
+	const [isInLibrary, setIsSaved] = React.useState(false);
 
 	React.useEffect(() => {
 		const checkIfInLibrary = async () => {
@@ -110,7 +167,7 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 					.maybeSingle();
 
 				if (!error) {
-					setIsInLibrary(!!data);
+					setIsSaved(!!data);
 				}
 			} catch (error) {
 				console.error('Błąd sprawdzania biblioteki:', error);
@@ -122,7 +179,10 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 
 	return (
 		<div className='fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4'>
-			<div className='relative bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto'>
+			<div
+				ref={modalRef}
+				className='relative bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto'
+			>
 				<div className='flex justify-between items-center p-4 border-b'>
 					<h3 className='text-xl font-semibold text-gray-900'>{book.title}</h3>
 					<button

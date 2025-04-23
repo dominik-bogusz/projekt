@@ -2,6 +2,7 @@
 import React from 'react';
 import { Book } from '../types/book';
 import BookCard from './BookCard';
+import { HiOutlineBookOpen, HiOutlineSearch } from 'react-icons/hi';
 
 interface BookListProps {
 	books: Book[];
@@ -10,6 +11,8 @@ interface BookListProps {
 	showSaveButton?: boolean;
 	showRemoveButton?: boolean;
 	isLoading?: boolean;
+	emptyMessage?: string;
+	showEmptyState?: boolean;
 }
 
 const BookList: React.FC<BookListProps> = ({
@@ -19,6 +22,8 @@ const BookList: React.FC<BookListProps> = ({
 	showSaveButton = false,
 	showRemoveButton = false,
 	isLoading = false,
+	emptyMessage = 'Brak książek do wyświetlenia',
+	showEmptyState = true,
 }) => {
 	if (isLoading) {
 		return (
@@ -35,10 +40,22 @@ const BookList: React.FC<BookListProps> = ({
 		);
 	}
 
-	if (books.length === 0) {
+	if (books.length === 0 && showEmptyState) {
 		return (
-			<div className='text-center py-12'>
-				<p className='text-xl text-gray-500'>Brak książek do wyświetlenia</p>
+			<div className='text-center py-12 bg-white rounded-lg shadow'>
+				<div className='flex justify-center mb-4'>
+					{window.location.pathname.includes('/search') ? (
+						<HiOutlineSearch className='w-16 h-16 text-gray-400' />
+					) : (
+						<HiOutlineBookOpen className='w-16 h-16 text-gray-400' />
+					)}
+				</div>
+				<p className='text-xl text-gray-500'>{emptyMessage}</p>
+				{window.location.pathname.includes('/search') && (
+					<p className='text-sm text-gray-400 mt-2'>
+						Wprowadź frazę wyszukiwania, aby znaleźć książki
+					</p>
+				)}
 			</div>
 		);
 	}
