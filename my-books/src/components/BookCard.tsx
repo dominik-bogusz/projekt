@@ -19,6 +19,7 @@ const BookCard: React.FC<BookCardProps> = ({
 }) => {
 	const [showDetails, setShowDetails] = useState(false);
 	const [imageError, setImageError] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 	const { user } = useAuth();
 	const defaultCover = 'https://via.placeholder.com/128x192?text=Brak+Okładki';
 
@@ -35,77 +36,104 @@ const BookCard: React.FC<BookCardProps> = ({
 		e.stopPropagation();
 		if (!user) return;
 
-		if (window.confirm('Czy na pewno chcesz usunąć tę książkę z biblioteki?')) {
-			try {
-				const { data: bookData, error: findError } = await supabase
-					.from('books')
-					.select('id')
-					.eq('user_id', user.id)
-					.or(`google_books_id.eq.${book.id},id.eq.${book.id}`)
-					.single();
+		// Pokaż dialog potwierdzenia
+		setIsDeleting(true);
+	};
 
-				if (findError) {
-					console.error('Błąd podczas wyszukiwania książki:', findError);
-					throw findError;
-				}
+	const confirmDeletion = async () => {
+		if (!user) return;
 
-				if (!bookData) {
-					alert('Nie znaleziono książki w bazie danych.');
-					return;
-				}
+		try {
+			// Sprawdź, czy to książka z Google Books czy dodana przez użytkownika
+			let query = supabase.from('books').select('id').eq('user_id', user.id);
 
-				const bookId = bookData.id;
-
-				const { error: statusError } = await supabase
-					.from('reading_status')
-					.delete()
-					.eq('user_id', user.id)
-					.eq('book_id', bookId);
-
-				if (statusError) {
-					console.error('Błąd podczas usuwania statusu czytania:', statusError);
-				}
-
-				const { error: reviewsError } = await supabase
-					.from('reviews')
-					.delete()
-					.eq('user_id', user.id)
-					.eq('book_id', bookId);
-
-				if (reviewsError) {
-					console.error('Błąd podczas usuwania recenzji:', reviewsError);
-				}
-
-				const { error: shelvesError } = await supabase
-					.from('book_shelf_items')
-					.delete()
-					.eq('book_id', bookId);
-
-				if (shelvesError) {
-					console.error('Błąd podczas usuwania z półek:', shelvesError);
-				}
-
-				const { error: deleteError } = await supabase
-					.from('books')
-					.delete()
-					.eq('id', bookId)
-					.eq('user_id', user.id);
-
-				if (deleteError) {
-					console.error('Błąd podczas usuwania książki:', deleteError);
-					throw deleteError;
-				}
-
-				if (onRemove) {
-					onRemove(book.id);
-				}
-
-				alert('Książka została pomyślnie usunięta z biblioteki');
-			} catch (error) {
-				console.error('Błąd podczas usuwania książki:', error);
-				alert('Wystąpił błąd podczas usuwania książki. Spróbuj ponownie.');
+			// Jeśli to custom book (ma prefix 'custom_' lub nie ma google_books_id)
+			if (
+				book.isCustom ||
+				(typeof book.id === 'string' && book.id.startsWith('custom_'))
+			) {
+				query = query.eq('id', book.id);
+			} else {
+				// To książka z Google Books API
+				query = query.eq('google_books_id', book.id);
 			}
+
+			const { data: bookData, error: findError } = await query.single();
+
+			if (findError) {
+				console.error('Błąd podczas wyszukiwania książki:', findError);
+				throw findError;
+			}
+
+			if (!bookData) {
+				showToast('Nie znaleziono książki w bazie danych.', 'error');
+				return;
+			}
+
+			const bookId = bookData.id;
+
+			// Usuń powiązane dane
+			await supabase
+				.from('reading_status')
+				.delete()
+				.eq('user_id', user.id)
+				.eq('book_id', bookId);
+
+			await supabase
+				.from('reviews')
+				.delete()
+				.eq('user_id', user.id)
+				.eq('book_id', bookId);
+
+			await supabase.from('book_shelf_items').delete().eq('book_id', bookId);
+
+			// Usuń książkę
+			const { error: deleteError } = await supabase
+				.from('books')
+				.delete()
+				.eq('id', bookId)
+				.eq('user_id', user.id);
+
+			if (deleteError) throw deleteError;
+
+			if (onRemove) {
+				onRemove(book.id);
+			}
+
+			showToast('Książka została pomyślnie usunięta z biblioteki', 'success');
+		} catch (error) {
+			console.error('Błąd podczas usuwania książki:', error);
+			showToast(
+				'Wystąpił błąd podczas usuwania książki. Spróbuj ponownie.',
+				'error'
+			);
+		} finally {
+			setIsDeleting(false);
 		}
+	};
+
+	const cancelDeletion = () => {
+		setIsDeleting(false);
+	};
+
+	// Toast notification function
+	const showToast = (
+		message: string,
+		type: 'success' | 'error' = 'success'
+	) => {
+		const toast = document.createElement('div');
+		toast.className = `fixed bottom-4 right-4 ${
+			type === 'success' ? 'bg-green-500' : 'bg-red-500'
+		} text-white px-4 py-2 rounded shadow-lg z-50`;
+		toast.textContent = message;
+		document.body.appendChild(toast);
+
+		setTimeout(() => {
+			toast.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+			setTimeout(() => {
+				document.body.removeChild(toast);
+			}, 500);
+		}, 3000);
 	};
 
 	return (
@@ -118,7 +146,10 @@ const BookCard: React.FC<BookCardProps> = ({
 					<div className='w-32 h-48 flex-shrink-0'>
 						{!imageError ? (
 							<img
-								src={book.imageLinks?.thumbnail || defaultCover}
+								// WAŻNA ZMIANA: Dodanie thumbnail jako alternatywy
+								src={
+									book.imageLinks?.thumbnail || book.thumbnail || defaultCover
+								}
 								alt={book.title}
 								className='w-full h-full object-cover rounded'
 								onError={(e) => {
@@ -239,6 +270,32 @@ const BookCard: React.FC<BookCardProps> = ({
 
 			{showDetails && (
 				<BookDetailsModal book={book} onClose={() => setShowDetails(false)} />
+			)}
+
+			{/* Custom confirmation dialog for deletion */}
+			{isDeleting && (
+				<div className='fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50'>
+					<div className='bg-white rounded-lg p-6 max-w-md w-full'>
+						<h3 className='text-xl font-bold mb-4'>Potwierdź usunięcie</h3>
+						<p className='mb-6'>
+							Czy na pewno chcesz usunąć książkę "{book.title}" z biblioteki?
+						</p>
+						<div className='flex justify-end gap-3'>
+							<button
+								onClick={cancelDeletion}
+								className='px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300'
+							>
+								Anuluj
+							</button>
+							<button
+								onClick={confirmDeletion}
+								className='px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700'
+							>
+								Usuń
+							</button>
+						</div>
+					</div>
+				</div>
 			)}
 		</>
 	);

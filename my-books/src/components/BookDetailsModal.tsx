@@ -15,7 +15,63 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 }) => {
 	const { user } = useAuth();
 	const [imageError, setImageError] = useState(false);
+	const [isInLibrary, setIsSaved] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 	const modalRef = useRef<HTMLDivElement>(null);
+	const [debugInfo, setDebugInfo] = useState<any>(null);
+
+	useEffect(() => {
+		// Debugowanie - sprawdź dane książki
+		console.log('Dane książki:', book);
+		console.log('URL okładki (imageLinks):', book.imageLinks?.thumbnail);
+		console.log('URL okładki (thumbnail):', book.thumbnail);
+
+		// Logujemy debugInfo dla diagnostyki
+		if (book.id) {
+			checkBookCoverData(book.id);
+		}
+	}, [book]);
+
+	// Funkcja do diagnostyki danych okładki
+	const checkBookCoverData = async (bookId: string) => {
+		try {
+			// Sprawdzamy, czy to custom book
+			const isCustom =
+				typeof bookId === 'string' && bookId.startsWith('custom_');
+
+			let query = supabase.from('books').select('*');
+
+			if (isCustom) {
+				query = query.eq('id', bookId);
+			} else {
+				query = query.eq('google_books_id', bookId);
+			}
+
+			const { data, error } = await query.maybeSingle();
+
+			if (error) {
+				console.error('Błąd pobierania danych książki:', error);
+				return;
+			}
+
+			if (data) {
+				console.log('Dane książki z bazy:', data);
+				console.log('URL okładki w bazie:', data.thumbnail);
+				setDebugInfo(data);
+
+				// Jeśli mamy URL okładki, próbujemy sprawdzić, czy jest dostępny
+				if (data.thumbnail) {
+					const img = new Image();
+					img.onload = () => console.log('Okładka załadowana pomyślnie');
+					img.onerror = () =>
+						console.error('Nie można załadować okładki z URL:', data.thumbnail);
+					img.src = data.thumbnail;
+				}
+			}
+		} catch (err) {
+			console.error('Błąd diagnostyki okładki:', err);
+		}
+	};
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -59,112 +115,163 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 			if (checkError) throw checkError;
 
 			if (existingBook) {
-				// Ciche powiadomienie zamiast alert
-				const notification = document.createElement('div');
-				notification.className =
-					'fixed bottom-4 right-4 bg-yellow-500 text-white px-4 py-2 rounded shadow-lg';
-				notification.textContent = 'Ta książka jest już w Twojej bibliotece!';
-				document.body.appendChild(notification);
-
-				setTimeout(() => {
-					document.body.removeChild(notification);
-				}, 3000);
-
+				showToast('Ta książka jest już w Twojej bibliotece!', 'warning');
 				return;
 			}
 
-			const { error } = await supabase.from('books').insert([
-				{
-					google_books_id: book.id,
-					title: book.title,
-					authors: book.authors,
-					description: book.description,
-					published_date: book.publishedDate,
-					thumbnail: book.imageLinks?.thumbnail,
-					publisher: book.publisher,
-					user_id: user.id,
-				},
-			]);
+			// Pobieramy URL okładki, preferując thumbnail z imageLinks
+			const thumbnailUrl = book.imageLinks?.thumbnail || book.thumbnail;
+			console.log('Zapisywany URL okładki:', thumbnailUrl);
+
+			const { data, error } = await supabase
+				.from('books')
+				.insert([
+					{
+						google_books_id: book.id,
+						title: book.title,
+						authors: book.authors,
+						description: book.description,
+						published_date: book.publishedDate,
+						thumbnail: thumbnailUrl, // Zapisujemy URL okładki
+						publisher: book.publisher,
+						user_id: user.id,
+					},
+				])
+				.select();
 
 			if (error) throw error;
 
-			// Ciche powiadomienie zamiast alert
-			const notification = document.createElement('div');
-			notification.className =
-				'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg';
-			notification.textContent = 'Książka została dodana do Twojej biblioteki!';
-			document.body.appendChild(notification);
+			console.log('Zapisana książka:', data);
 
-			setTimeout(() => {
-				document.body.removeChild(notification);
-			}, 3000);
-
+			showToast('Książka została dodana do Twojej biblioteki!', 'success');
 			setIsSaved(true);
+
+			// Po zapisaniu od razu sprawdzamy, czy okładka jest dostępna
+			if (data && data.length > 0) {
+				checkBookCoverData(book.id);
+			}
 		} catch (error) {
 			console.error('Error saving book:', error);
-			alert('Wystąpił błąd podczas zapisywania książki.');
+			showToast('Wystąpił błąd podczas zapisywania książki.', 'error');
 		}
 	};
 
-	const removeBookFromLibrary = async () => {
+	const confirmDeletion = async () => {
 		if (!user) return;
 
-		if (window.confirm('Czy na pewno chcesz usunąć tę książkę z biblioteki?')) {
-			try {
-				const { data, error: findError } = await supabase
-					.from('books')
-					.select('id')
-					.eq('user_id', user.id)
-					.or(`google_books_id.eq.${book.id},id.eq.${book.id}`)
-					.single();
+		try {
+			// Sprawdź, czy to książka z Google Books czy dodana przez użytkownika
+			let query = supabase.from('books').select('id').eq('user_id', user.id);
 
-				if (findError) throw findError;
-
-				if (data) {
-					const { error: deleteError } = await supabase
-						.from('books')
-						.delete()
-						.eq('id', data.id);
-
-					if (deleteError) throw deleteError;
-					await supabase
-						.from('reading_status')
-						.delete()
-						.eq('user_id', user.id)
-						.eq('book_id', data.id);
-
-					// Ciche powiadomienie zamiast alert
-					const notification = document.createElement('div');
-					notification.className =
-						'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg';
-					notification.textContent = 'Książka została usunięta z biblioteki.';
-					document.body.appendChild(notification);
-
-					setTimeout(() => {
-						document.body.removeChild(notification);
-					}, 3000);
-
-					onClose();
-				}
-			} catch (error) {
-				console.error('Błąd podczas usuwania książki:', error);
-				alert('Wystąpił błąd podczas usuwania książki.');
+			// Jeśli to custom book (ma prefix 'custom_' lub nie ma google_books_id)
+			if (
+				book.isCustom ||
+				(typeof book.id === 'string' && book.id.startsWith('custom_'))
+			) {
+				query = query.eq('id', book.id);
+			} else {
+				// To książka z Google Books API
+				query = query.eq('google_books_id', book.id);
 			}
+
+			const { data: bookData, error: findError } = await query.single();
+
+			if (findError) {
+				console.error('Błąd podczas wyszukiwania książki:', findError);
+				throw findError;
+			}
+
+			if (!bookData) {
+				showToast('Nie znaleziono książki w bazie danych.', 'error');
+				return;
+			}
+
+			const bookId = bookData.id;
+
+			// Usuń powiązane dane
+			await supabase
+				.from('reading_status')
+				.delete()
+				.eq('user_id', user.id)
+				.eq('book_id', bookId);
+
+			await supabase
+				.from('reviews')
+				.delete()
+				.eq('user_id', user.id)
+				.eq('book_id', bookId);
+
+			await supabase.from('book_shelf_items').delete().eq('book_id', bookId);
+
+			// Usuń książkę
+			const { error: deleteError } = await supabase
+				.from('books')
+				.delete()
+				.eq('id', bookId)
+				.eq('user_id', user.id);
+
+			if (deleteError) throw deleteError;
+
+			showToast('Książka została usunięta z biblioteki.', 'success');
+			setIsSaved(false);
+			onClose();
+		} catch (error) {
+			console.error('Błąd podczas usuwania książki:', error);
+			showToast('Wystąpił błąd podczas usuwania książki.', 'error');
+		} finally {
+			setIsDeleting(false);
 		}
 	};
-	const [isInLibrary, setIsSaved] = React.useState(false);
 
-	React.useEffect(() => {
+	const cancelDeletion = () => {
+		setIsDeleting(false);
+	};
+
+	// Toast notification function
+	const showToast = (
+		message: string,
+		type: 'success' | 'error' | 'warning' = 'success'
+	) => {
+		const toast = document.createElement('div');
+
+		const bgColor =
+			type === 'success'
+				? 'bg-green-500'
+				: type === 'warning'
+				? 'bg-yellow-500'
+				: 'bg-red-500';
+
+		toast.className = `fixed bottom-4 right-4 ${bgColor} text-white px-4 py-2 rounded shadow-lg z-50`;
+		toast.textContent = message;
+		document.body.appendChild(toast);
+
+		setTimeout(() => {
+			toast.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+			setTimeout(() => {
+				document.body.removeChild(toast);
+			}, 500);
+		}, 3000);
+	};
+
+	useEffect(() => {
 		const checkIfInLibrary = async () => {
 			if (!user) return;
 
 			try {
-				const { data, error } = await supabase
-					.from('books')
-					.select('id')
-					.eq('user_id', user.id)
-					.or(`google_books_id.eq.${book.id},id.eq.${book.id}`)
-					.maybeSingle();
+				let query = supabase.from('books').select('id').eq('user_id', user.id);
+
+				// Jeśli to custom book
+				if (
+					book.isCustom ||
+					(typeof book.id === 'string' && book.id.startsWith('custom_'))
+				) {
+					query = query.eq('id', book.id);
+				} else {
+					// To książka z Google Books API
+					query = query.eq('google_books_id', book.id);
+				}
+
+				const { data, error } = await query.maybeSingle();
 
 				if (!error) {
 					setIsSaved(!!data);
@@ -176,6 +283,48 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 
 		checkIfInLibrary();
 	}, [book.id, user]);
+
+	// Funkcja do pobierania publicznego URL z bucketa Supabase
+	const getPublicURL = (filePath: string) => {
+		try {
+			const { data } = supabase.storage
+				.from('book-covers')
+				.getPublicUrl(filePath);
+
+			return data.publicUrl;
+		} catch (error) {
+			console.error('Błąd pobierania publicznego URL:', error);
+			return null;
+		}
+	};
+
+	// Konstruujemy URL okładki, sprawdzając wszystkie możliwe źródła
+	const getCoverImageUrl = () => {
+		// Najpierw sprawdzamy, czy mamy debugInfo z danymi z bazy
+		if (debugInfo && debugInfo.thumbnail) {
+			// Sprawdź, czy to ścieżka do pliku w storage
+			if (debugInfo.thumbnail.includes('/')) {
+				// Może to być ścieżka względna do bucketa
+				return getPublicURL(debugInfo.thumbnail) || debugInfo.thumbnail;
+			}
+			return debugInfo.thumbnail;
+		}
+
+		// Jeśli nie mamy danych z bazy, próbujemy standardowych ścieżek
+		if (book.imageLinks?.thumbnail) {
+			return book.imageLinks.thumbnail;
+		}
+
+		if (book.thumbnail) {
+			// Jeśli to nazwa pliku bez ścieżki, próbujemy skonstruować pełny URL
+			if (!book.thumbnail.startsWith('http') && !book.thumbnail.includes('/')) {
+				return getPublicURL(book.thumbnail) || book.thumbnail;
+			}
+			return book.thumbnail;
+		}
+
+		return 'https://via.placeholder.com/128x192?text=Brak+Okładki';
+	};
 
 	return (
 		<div className='fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4'>
@@ -209,12 +358,15 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 					<div className='md:flex'>
 						<div className='md:w-1/3 mb-6 md:mb-0 flex flex-col items-center'>
 							<div className='w-48 h-72 bg-gray-100 rounded flex items-center justify-center overflow-hidden'>
-								{!imageError && book.imageLinks?.thumbnail ? (
+								{!imageError ? (
 									<img
-										src={book.imageLinks.thumbnail}
+										src={getCoverImageUrl()}
 										alt={book.title}
 										className='w-full h-full object-cover'
-										onError={() => setImageError(true)}
+										onError={(e) => {
+											console.error('Błąd ładowania obrazu:', e);
+											setImageError(true);
+										}}
 									/>
 								) : (
 									<div className='text-center p-4 text-gray-500'>
@@ -233,6 +385,9 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 											/>
 										</svg>
 										<p className='mt-2 text-sm'>{book.title}</p>
+										<p className='mt-2 text-xs text-gray-400'>
+											URL: {getCoverImageUrl()}
+										</p>
 									</div>
 								)}
 							</div>
@@ -247,7 +402,7 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 												</span>
 											</div>
 											<button
-												onClick={removeBookFromLibrary}
+												onClick={() => setIsDeleting(true)}
 												className='mt-4 inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700'
 											>
 												<svg
@@ -385,7 +540,45 @@ const BookDetailsModal: React.FC<BookDetailsModalProps> = ({
 							)}
 						</div>
 					</div>
+
+					{/* Sekcja debugowania (do usunięcia na produkcji) */}
+					{debugInfo && (
+						<div className='mt-6 p-4 bg-gray-100 rounded-lg'>
+							<h4 className='text-sm font-bold mb-2'>
+								Informacje debugowania:
+							</h4>
+							<pre className='text-xs overflow-auto p-2 bg-gray-200 rounded'>
+								{JSON.stringify(debugInfo, null, 2)}
+							</pre>
+						</div>
+					)}
 				</div>
+
+				{/* Modal do potwierdzenia usunięcia */}
+				{isDeleting && (
+					<div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center'>
+						<div className='bg-white p-6 rounded-lg shadow-xl max-w-md w-full'>
+							<h3 className='text-lg font-bold mb-4'>Potwierdź usunięcie</h3>
+							<p className='mb-6'>
+								Czy na pewno chcesz usunąć tę książkę z Twojej biblioteki?
+							</p>
+							<div className='flex justify-end space-x-2'>
+								<button
+									onClick={cancelDeletion}
+									className='px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50'
+								>
+									Anuluj
+								</button>
+								<button
+									onClick={confirmDeletion}
+									className='px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700'
+								>
+									Usuń
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);
