@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
 import { Book } from '../types/book';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../api/supabase';
 import BookDetailsModal from './BookDetailsModal';
+import useToast from '../hooks/useToast';
+import { getBookCoverUrl } from '../utils/helpers';
+import Button from './ui/Button';
+import Card from './ui/Card';
+import Modal from './ui/Modal';
+import {
+	HiOutlinePlus,
+	HiOutlineTrash,
+	HiOutlineInformationCircle,
+} from 'react-icons/hi';
 
 interface BookCardProps {
 	book: Book;
@@ -21,49 +30,10 @@ const BookCard: React.FC<BookCardProps> = ({
 	const [imageError, setImageError] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const { user } = useAuth();
+	const toast = useToast();
 	const defaultCover = 'https://via.placeholder.com/128x192?text=Brak+Okładki';
 
-	// Helper function to get proper image URL
-	const getProperImageUrl = (book: Book): string => {
-		// If no image links or thumbnail, return default image
-		if (!book.imageLinks?.thumbnail && !book.thumbnail) {
-			return defaultCover;
-		}
-
-		// First try to use the thumbnail from imageLinks (Google Books API)
-		if (book.imageLinks?.thumbnail) {
-			return book.imageLinks.thumbnail;
-		}
-
-		// If we have a thumbnail from our database
-		if (book.thumbnail) {
-			// Check if it's a full URL (starts with http or https)
-			if (book.thumbnail.startsWith('http')) {
-				return book.thumbnail;
-			}
-
-			// Check if it's a Supabase storage URL (contains a path structure)
-			if (book.thumbnail.includes('/')) {
-				// It's a relative path, get the public URL
-				const { publicUrl } = supabase.storage
-					.from('book-covers')
-					.getPublicUrl(book.thumbnail);
-
-				return publicUrl;
-			}
-
-			// Otherwise, it might be just the filename, construct the full path
-			const { publicUrl } = supabase.storage
-				.from('book-covers')
-				.getPublicUrl(book.thumbnail);
-
-			return publicUrl;
-		}
-
-		return defaultCover;
-	};
-
-	const handleAddClick = (e: React.MouseEvent) => {
+	const handleAddClick = (e: React.MouseEvent<HTMLButtonElement>) => {
 		e.stopPropagation();
 		if (!user) {
 			window.location.href = '/login';
@@ -72,81 +42,28 @@ const BookCard: React.FC<BookCardProps> = ({
 		}
 	};
 
-	const handleRemoveClick = async (e: React.MouseEvent) => {
+	const handleRemoveClick = (e: React.MouseEvent<HTMLButtonElement>) => {
 		e.stopPropagation();
 		if (!user) return;
-
-		// Pokaż dialog potwierdzenia
 		setIsDeleting(true);
+	};
+
+	const handleDetailsClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+		e.stopPropagation();
+		setShowDetails(true);
 	};
 
 	const confirmDeletion = async () => {
 		if (!user) return;
 
 		try {
-			// Sprawdź, czy to książka z Google Books czy dodana przez użytkownika
-			let query = supabase.from('books').select('id').eq('user_id', user.id);
-
-			// Jeśli to custom book (ma prefix 'custom_' lub nie ma google_books_id)
-			if (
-				book.isCustom ||
-				(typeof book.id === 'string' && book.id.startsWith('custom_'))
-			) {
-				query = query.eq('id', book.id);
-			} else {
-				// To książka z Google Books API
-				query = query.eq('google_books_id', book.id);
-			}
-
-			const { data: bookData, error: findError } = await query.single();
-
-			if (findError) {
-				console.error('Błąd podczas wyszukiwania książki:', findError);
-				throw findError;
-			}
-
-			if (!bookData) {
-				showToast('Nie znaleziono książki w bazie danych.', 'error');
-				return;
-			}
-
-			const bookId = bookData.id;
-
-			// Usuń powiązane dane
-			await supabase
-				.from('reading_status')
-				.delete()
-				.eq('user_id', user.id)
-				.eq('book_id', bookId);
-
-			await supabase
-				.from('reviews')
-				.delete()
-				.eq('user_id', user.id)
-				.eq('book_id', bookId);
-
-			await supabase.from('book_shelf_items').delete().eq('book_id', bookId);
-
-			// Usuń książkę
-			const { error: deleteError } = await supabase
-				.from('books')
-				.delete()
-				.eq('id', bookId)
-				.eq('user_id', user.id);
-
-			if (deleteError) throw deleteError;
-
 			if (onRemove) {
 				onRemove(book.id);
 			}
-
-			showToast('Książka została pomyślnie usunięta z biblioteki', 'success');
+			toast.success('Książka została pomyślnie usunięta z biblioteki');
 		} catch (error) {
 			console.error('Błąd podczas usuwania książki:', error);
-			showToast(
-				'Wystąpił błąd podczas usuwania książki. Spróbuj ponownie.',
-				'error'
-			);
+			toast.error('Wystąpił błąd podczas usuwania książki. Spróbuj ponownie.');
 		} finally {
 			setIsDeleting(false);
 		}
@@ -156,37 +73,17 @@ const BookCard: React.FC<BookCardProps> = ({
 		setIsDeleting(false);
 	};
 
-	// Toast notification function
-	const showToast = (
-		message: string,
-		type: 'success' | 'error' = 'success'
-	) => {
-		const toast = document.createElement('div');
-		toast.className = `fixed bottom-4 right-4 ${
-			type === 'success' ? 'bg-green-500' : 'bg-red-500'
-		} text-white px-4 py-2 rounded shadow-lg z-50`;
-		toast.textContent = message;
-		document.body.appendChild(toast);
-
-		setTimeout(() => {
-			toast.classList.add('opacity-0', 'transition-opacity', 'duration-500');
-			setTimeout(() => {
-				document.body.removeChild(toast);
-			}, 500);
-		}, 3000);
-	};
-
 	return (
 		<>
-			<div
-				className='bg-white rounded-lg border border-gray-200 shadow-md h-full flex flex-col cursor-pointer hover:shadow-lg transition-shadow'
+			<Card
+				className='h-full flex flex-col cursor-pointer hover:shadow-lg transition-shadow'
 				onClick={() => setShowDetails(true)}
 			>
 				<div className='flex mb-4 p-4'>
 					<div className='w-32 h-48 flex-shrink-0'>
 						{!imageError ? (
 							<img
-								src={getProperImageUrl(book)}
+								src={getBookCoverUrl(book)}
 								alt={book.title}
 								className='w-full h-full object-cover rounded'
 								onError={(e) => {
@@ -252,88 +149,56 @@ const BookCard: React.FC<BookCardProps> = ({
 
 				<div className='flex justify-between items-center p-4 border-t border-gray-200'>
 					{onSave && (
-						<button
+						<Button
 							onClick={handleAddClick}
-							className='inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300'
+							variant='primary'
+							icon={<HiOutlinePlus />}
 						>
-							<svg
-								className='w-5 h-5 mr-2'
-								fill='currentColor'
-								viewBox='0 0 20 20'
-								xmlns='http://www.w3.org/2000/svg'
-							>
-								<path
-									fillRule='evenodd'
-									d='M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z'
-									clipRule='evenodd'
-								/>
-							</svg>
 							Dodaj
-						</button>
+						</Button>
 					)}
 
 					{showRemoveButton && (
-						<button
+						<Button
 							onClick={handleRemoveClick}
-							className='inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300'
+							variant='danger'
+							icon={<HiOutlineTrash />}
 						>
-							<svg
-								className='w-5 h-5 mr-2'
-								fill='currentColor'
-								viewBox='0 0 20 20'
-								xmlns='http://www.w3.org/2000/svg'
-							>
-								<path
-									fillRule='evenodd'
-									d='M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z'
-									clipRule='evenodd'
-								/>
-							</svg>
 							Usuń
-						</button>
+						</Button>
 					)}
 
-					<button
-						onClick={(e) => {
-							e.stopPropagation();
-							setShowDetails(true);
-						}}
-						className='py-2 px-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200'
+					<Button
+						onClick={handleDetailsClick}
+						variant='secondary'
+						icon={<HiOutlineInformationCircle />}
 					>
 						Szczegóły
-					</button>
+					</Button>
 				</div>
-			</div>
+			</Card>
 
 			{showDetails && (
 				<BookDetailsModal book={book} onClose={() => setShowDetails(false)} />
 			)}
 
-			{/* Custom confirmation dialog for deletion */}
-			{isDeleting && (
-				<div className='fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50'>
-					<div className='bg-white rounded-lg p-6 max-w-md w-full'>
-						<h3 className='text-xl font-bold mb-4'>Potwierdź usunięcie</h3>
-						<p className='mb-6'>
-							Czy na pewno chcesz usunąć książkę "{book.title}" z biblioteki?
-						</p>
-						<div className='flex justify-end gap-3'>
-							<button
-								onClick={cancelDeletion}
-								className='px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300'
-							>
-								Anuluj
-							</button>
-							<button
-								onClick={confirmDeletion}
-								className='px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700'
-							>
-								Usuń
-							</button>
-						</div>
-					</div>
+			<Modal
+				isOpen={isDeleting}
+				onClose={cancelDeletion}
+				title='Potwierdź usunięcie'
+			>
+				<p className='mb-6'>
+					Czy na pewno chcesz usunąć książkę "{book.title}" z biblioteki?
+				</p>
+				<div className='flex justify-end gap-3'>
+					<Button variant='secondary' onClick={cancelDeletion}>
+						Anuluj
+					</Button>
+					<Button variant='danger' onClick={confirmDeletion}>
+						Usuń
+					</Button>
 				</div>
-			)}
+			</Modal>
 		</>
 	);
 };
