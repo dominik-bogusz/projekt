@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { searchBooks } from '../api/googleBooks';
-import { supabase } from '../api/supabase';
 import BookList from '../components/BookList';
-import { Book, GoogleBookResponse } from '../types/book';
 import Pagination from '../components/Pagination';
+import useSearch from '../hooks/useSearch';
+import useBook from '../hooks/useBook';
 
 const Search: React.FC = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -13,13 +12,12 @@ const Search: React.FC = () => {
 	const initialCategory = searchParams.get('category') || '';
 
 	const [query, setQuery] = useState(initialQuery);
-	const [books, setBooks] = useState<Book[]>([]);
-	const [isLoading, setIsLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 	const [currentPage, setCurrentPage] = useState(initialPage);
-	const [totalResults, setTotalResults] = useState(0);
 	const [category, setCategory] = useState(initialCategory);
 	const [categories, setCategories] = useState<string[]>([]);
+
+	const { books, isLoading, error, totalResults, search } = useSearch();
+	const { saveBook } = useBook();
 
 	const resultsPerPage = 20;
 	const totalPages = Math.min(50, Math.ceil(totalResults / resultsPerPage));
@@ -39,9 +37,6 @@ const Search: React.FC = () => {
 	const handleSearchWithoutEvent = async () => {
 		if (!query.trim()) return;
 
-		setIsLoading(true);
-		setError(null);
-
 		const searchParamsObj: Record<string, string> = {
 			q: query,
 			page: currentPage.toString(),
@@ -53,80 +48,16 @@ const Search: React.FC = () => {
 
 		setSearchParams(searchParamsObj);
 
-		try {
-			const startIndex = (currentPage - 1) * resultsPerPage;
-			const fullQuery = category ? `${query}+subject:${category}` : query;
+		const startIndex = (currentPage - 1) * resultsPerPage;
+		await search(query, startIndex, category);
 
-			const response: GoogleBookResponse = await searchBooks(
-				fullQuery,
-				resultsPerPage,
-				startIndex
-			);
+		// Extract unique categories for filter
+		const allCategories = books
+			.flatMap((book) => book.categories || [])
+			.filter((v, i, a) => a.indexOf(v) === i)
+			.sort();
 
-			if (response.totalItems === 0 || !response.items) {
-				setTotalResults(0);
-				setBooks([]);
-				setIsLoading(false);
-				return;
-			}
-
-			setTotalResults(response.totalItems);
-
-			const formattedBooks: Book[] = response.items.map((item) => ({
-				id: item.id,
-				title: item.volumeInfo.title,
-				authors: item.volumeInfo.authors,
-				description: item.volumeInfo.description,
-				publishedDate: item.volumeInfo.publishedDate,
-				pageCount: item.volumeInfo.pageCount,
-				categories: item.volumeInfo.categories,
-				imageLinks: item.volumeInfo.imageLinks,
-				language: item.volumeInfo.language,
-				averageRating: item.volumeInfo.averageRating,
-				publisher: item.volumeInfo.publisher,
-			}));
-
-			// Extract unique categories for filter
-			const allCategories = formattedBooks
-				.flatMap((book) => book.categories || [])
-				.filter((v, i, a) => a.indexOf(v) === i)
-				.sort();
-
-			setCategories(allCategories);
-
-			const sortedBooks = formattedBooks.sort((a, b) => {
-				if (a.imageLinks?.thumbnail && !b.imageLinks?.thumbnail) return -1;
-				if (!a.imageLinks?.thumbnail && b.imageLinks?.thumbnail) return 1;
-				return 0;
-			});
-
-			setBooks(sortedBooks);
-
-			if (
-				response.items.length < resultsPerPage &&
-				currentPage * resultsPerPage >= response.totalItems
-			) {
-				const adjustedTotal =
-					(currentPage - 1) * resultsPerPage + response.items.length;
-				if (adjustedTotal < response.totalItems) {
-					setTotalResults(adjustedTotal);
-				}
-			}
-
-			if (response.items.length === 0 && currentPage > 1) {
-				setCurrentPage(1);
-				setSearchParams({
-					q: query,
-					page: '1',
-					...(category && { category }),
-				});
-			}
-		} catch (error) {
-			console.error('Błąd wyszukiwania książek:', error);
-			setError('Wystąpił błąd podczas wyszukiwania. Spróbuj ponownie.');
-		} finally {
-			setIsLoading(false);
-		}
+		setCategories(allCategories);
 	};
 
 	const handlePageChange = (page: number) => {
@@ -137,48 +68,6 @@ const Search: React.FC = () => {
 	const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
 		setCategory(e.target.value);
 		setCurrentPage(1);
-	};
-
-	const saveBookToLibrary = async (book: Book) => {
-		try {
-			const {
-				data: { session },
-			} = await supabase.auth.getSession();
-
-			if (!session) {
-				alert('Musisz się zalogować, aby dodać książkę do biblioteki');
-				return;
-			}
-
-			const { error } = await supabase.from('books').insert([
-				{
-					google_books_id: book.id,
-					title: book.title,
-					authors: book.authors,
-					description: book.description,
-					published_date: book.publishedDate,
-					thumbnail: book.imageLinks?.thumbnail,
-					publisher: book.publisher,
-					user_id: session.user.id,
-				},
-			]);
-
-			if (error) throw error;
-
-			// Ciche powiadomienie zamiast alert
-			const notification = document.createElement('div');
-			notification.className =
-				'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg';
-			notification.textContent = 'Książka dodana do biblioteki';
-			document.body.appendChild(notification);
-
-			setTimeout(() => {
-				document.body.removeChild(notification);
-			}, 3000);
-		} catch (error) {
-			console.error('Błąd zapisywania książki:', error);
-			alert('Wystąpił błąd podczas zapisywania książki.');
-		}
 	};
 
 	return (
@@ -274,7 +163,7 @@ const Search: React.FC = () => {
 
 			<BookList
 				books={books}
-				onSaveBook={saveBookToLibrary}
+				onSaveBook={saveBook}
 				showSaveButton={true}
 				isLoading={isLoading}
 			/>

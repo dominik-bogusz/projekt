@@ -5,6 +5,8 @@ import { supabase } from '../api/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Book } from '../types/book';
 import ReadingStatusSelector from '../components/ReadingStatusSelector';
+import useBook from '../hooks/useBook';
+import useReadingStatus from '../hooks/useReadingStatus';
 import {
 	HiOutlineArrowLeft,
 	HiOutlineSave,
@@ -18,8 +20,11 @@ const BookDetail: React.FC = () => {
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [isSaved, setIsSaved] = useState(false);
+
 	const { user } = useAuth();
 	const navigate = useNavigate();
+	const { saveBook, removeBook } = useBook();
+	const { status } = useReadingStatus(id || '');
 
 	useEffect(() => {
 		const checkIfSaved = async () => {
@@ -112,37 +117,9 @@ const BookDetail: React.FC = () => {
 
 		if (!book) return;
 
-		try {
-			const { error } = await supabase.from('books').insert([
-				{
-					google_books_id: book.id,
-					title: book.title,
-					authors: book.authors,
-					description: book.description,
-					published_date: book.publishedDate,
-					thumbnail: book.imageLinks?.thumbnail,
-					publisher: book.publisher,
-					user_id: user.id,
-				},
-			]);
-
-			if (error) throw error;
-
+		const result = await saveBook(book);
+		if (result) {
 			setIsSaved(true);
-
-			// Powiadomienie (notification toast)
-			const notification = document.createElement('div');
-			notification.className =
-				'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
-			notification.textContent = 'Książka została dodana do Twojej biblioteki!';
-			document.body.appendChild(notification);
-
-			setTimeout(() => {
-				document.body.removeChild(notification);
-			}, 3000);
-		} catch (error) {
-			console.error('Error saving book:', error);
-			alert('Wystąpił błąd podczas zapisywania książki.');
 		}
 	};
 
@@ -150,56 +127,9 @@ const BookDetail: React.FC = () => {
 		if (!user || !book) return;
 
 		if (window.confirm('Czy na pewno chcesz usunąć tę książkę z biblioteki?')) {
-			try {
-				const { data: bookData, error: findError } = await supabase
-					.from('books')
-					.select('id')
-					.eq('user_id', user.id)
-					.or(`google_books_id.eq.${book.id},id.eq.${book.id}`)
-					.single();
-
-				if (findError) throw findError;
-
-				if (!bookData) {
-					alert('Książka nie znaleziona w bazie danych.');
-					return;
-				}
-
-				const bookId = bookData.id;
-
-				const { error: statusError } = await supabase
-					.from('reading_status')
-					.delete()
-					.eq('user_id', user.id)
-					.eq('book_id', bookId);
-
-				if (statusError) {
-					console.error('Błąd podczas usuwania statusu czytania:', statusError);
-				}
-
-				const { error: deleteError } = await supabase
-					.from('books')
-					.delete()
-					.eq('id', bookId)
-					.eq('user_id', user.id);
-
-				if (deleteError) throw deleteError;
-
+			const result = await removeBook(book.id);
+			if (result) {
 				setIsSaved(false);
-
-				// Powiadomienie (notification toast)
-				const notification = document.createElement('div');
-				notification.className =
-					'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
-				notification.textContent = 'Książka została usunięta z biblioteki.';
-				document.body.appendChild(notification);
-
-				setTimeout(() => {
-					document.body.removeChild(notification);
-				}, 3000);
-			} catch (error) {
-				console.error('Błąd podczas usuwania książki:', error);
-				alert('Wystąpił błąd podczas usuwania książki. Spróbuj ponownie.');
 			}
 		}
 	};
